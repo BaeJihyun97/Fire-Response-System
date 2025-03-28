@@ -1,0 +1,342 @@
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reportmanagement
+  labels:
+    app: reportmanagement
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reportmanagement
+  template:
+    metadata:
+      labels:
+        app: reportmanagement
+    spec:
+      containers:
+        - name: reportmanagement
+          image: username/reportmanagement:latest
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: '/actuator/health'
+              port: 8080
+            initialDelaySeconds: 10
+            timeoutSeconds: 2
+            periodSeconds: 5
+            failureThreshold: 10
+          livenessProbe:
+            httpGet:
+              path: '/actuator/health'
+              port: 8080
+            initialDelaySeconds: 120
+            timeoutSeconds: 2
+            periodSeconds: 5
+            failureThreshold: 5
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: videoproccessing
+  labels:
+    app: videoproccessing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: videoproccessing
+  template:
+    metadata:
+      labels:
+        app: videoproccessing
+    spec:
+      containers:
+        - name: videoproccessing
+          image: username/videoproccessing:latest
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: '/actuator/health'
+              port: 8080
+            initialDelaySeconds: 10
+            timeoutSeconds: 2
+            periodSeconds: 5
+            failureThreshold: 10
+          livenessProbe:
+            httpGet:
+              path: '/actuator/health'
+              port: 8080
+            initialDelaySeconds: 120
+            timeoutSeconds: 2
+            periodSeconds: 5
+            failureThreshold: 5
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eventmanagement
+  labels:
+    app: eventmanagement
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eventmanagement
+  template:
+    metadata:
+      labels:
+        app: eventmanagement
+    spec:
+      containers:
+        - name: eventmanagement
+          image: username/eventmanagement:latest
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: '/actuator/health'
+              port: 8080
+            initialDelaySeconds: 10
+            timeoutSeconds: 2
+            periodSeconds: 5
+            failureThreshold: 10
+          livenessProbe:
+            httpGet:
+              path: '/actuator/health'
+              port: 8080
+            initialDelaySeconds: 120
+            timeoutSeconds: 2
+            periodSeconds: 5
+            failureThreshold: 5
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aianalysis
+  labels:
+    app: aianalysis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aianalysis
+  template:
+    metadata:
+      labels:
+        app: aianalysis
+    spec:
+      containers:
+        - name: aianalysis
+          image: username/aianalysis:latest
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: '/actuator/health'
+              port: 8080
+            initialDelaySeconds: 10
+            timeoutSeconds: 2
+            periodSeconds: 5
+            failureThreshold: 10
+          livenessProbe:
+            httpGet:
+              path: '/actuator/health'
+              port: 8080
+            initialDelaySeconds: 120
+            timeoutSeconds: 2
+            periodSeconds: 5
+            failureThreshold: 5
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: feedservice
+  labels:
+    app: feedservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: feedservice
+  template:
+    metadata:
+      labels:
+        app: feedservice
+    spec:
+      containers:
+        - name: feedservice
+          image: username/feedservice:latest
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: '/actuator/health'
+              port: 8080
+            initialDelaySeconds: 10
+            timeoutSeconds: 2
+            periodSeconds: 5
+            failureThreshold: 10
+          livenessProbe:
+            httpGet:
+              path: '/actuator/health'
+              port: 8080
+            initialDelaySeconds: 120
+            timeoutSeconds: 2
+            periodSeconds: 5
+            failureThreshold: 5
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification
+  labels:
+    app: notification
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification
+  template:
+    metadata:
+      labels:
+        app: notification
+    spec:
+      containers:
+        - name: notification
+          image: username/notification:latest
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: '/actuator/health'
+              port: 8080
+            initialDelaySeconds: 10
+            timeoutSeconds: 2
+            periodSeconds: 5
+            failureThreshold: 10
+          livenessProbe:
+            httpGet:
+              path: '/actuator/health'
+              port: 8080
+            initialDelaySeconds: 120
+            timeoutSeconds: 2
+            periodSeconds: 5
+            failureThreshold: 5
+
+
+---
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: reportmanagement
+  labels:
+    app: reportmanagement
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: reportmanagement
+
+
+---
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: videoproccessing
+  labels:
+    app: videoproccessing
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: videoproccessing
+
+
+---
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: eventmanagement
+  labels:
+    app: eventmanagement
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: eventmanagement
+
+
+---
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: aianalysis
+  labels:
+    app: aianalysis
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: aianalysis
+
+
+---
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: feedservice
+  labels:
+    app: feedservice
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: feedservice
+
+
+---
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification
+  labels:
+    app: notification
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: notification
+

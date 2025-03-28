@@ -1,0 +1,71 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: eventmanagement
+---
+
+spring:
+  config:
+    activate:
+      on-profile: default
+  jpa:
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+        implicit_naming_strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
+  cloud:
+    function:
+      routing-expression: "headers['type']=='ReportReceived' ? 'wheneverReportReceived_CreateEvent' : headers['type']=='ReportReceived' ? 'wheneverReportReceived_AssignToEvent' : headers['type']=='VideoAnalyzed' ? 'wheneverVideoAnalyzed_IdentifyAsFireEvent' : headers['type']=='Reacted' ? 'wheneverReacted_IdentifyAsFireEvent' : 'discardFunction'"
+    stream:
+      kafka:
+        binder:
+          brokers: localhost:9092
+      bindings:
+          functionRouter-in-0:              
+            group: eventmanagement
+            destination: fireresponsesystem
+            contentType: application/json  
+          producer-out-0:
+            destination: fireresponsesystem
+            contentType: application/json
+logging:
+  level:
+    org.hibernate.type: trace
+    org.springframework.cloud: debug
+
+
+server:
+  port: 8084
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: docker
+  jpa:
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+        implicit_naming_strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
+  cloud:
+    function:
+      routing-expression: "headers['type']=='ReportReceived' ? 'wheneverReportReceived_CreateEvent' : headers['type']=='ReportReceived' ? 'wheneverReportReceived_AssignToEvent' : headers['type']=='VideoAnalyzed' ? 'wheneverVideoAnalyzed_IdentifyAsFireEvent' : headers['type']=='Reacted' ? 'wheneverReacted_IdentifyAsFireEvent' : 'discardFunction'"
+    stream:
+      kafka:
+        binder:
+          brokers: my-kafka:9092
+      bindings:
+          functionRouter-in-0:              
+            group: eventmanagement
+            destination: fireresponsesystem
+            contentType: application/json  
+          producer-out-0:
+            destination: fireresponsesystem
+            contentType: application/json
+            
+

@@ -1,0 +1,74 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: videoproccessing
+---
+
+spring:
+  config:
+    activate:
+      on-profile: default
+  jpa:
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+        implicit_naming_strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
+  cloud:
+    function:
+      routing-expression: "headers['type']=='EventIdUpdated' ? 'wheneverEventIdUpdated_AnalyzeVideo' : headers['type']=='EventIdUpdated' ? 'wheneverEventIdUpdated_BlurFace' : 'discardFunction'"
+    stream:
+      kafka:
+        binder:
+          brokers: localhost:9092
+      bindings:
+          functionRouter-in-0:              
+            group: videoproccessing
+            destination: fireresponsesystem
+            contentType: application/json  
+          producer-out-0:
+            destination: fireresponsesystem
+            contentType: application/json
+logging:
+  level:
+    org.hibernate.type: trace
+    org.springframework.cloud: debug
+
+
+server:
+  port: 8083
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: docker
+  jpa:
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+        implicit_naming_strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
+  cloud:
+    function:
+      routing-expression: "headers['type']=='EventIdUpdated' ? 'wheneverEventIdUpdated_AnalyzeVideo' : headers['type']=='EventIdUpdated' ? 'wheneverEventIdUpdated_BlurFace' : 'discardFunction'"
+    stream:
+      kafka:
+        binder:
+          brokers: my-kafka:9092
+      bindings:
+          functionRouter-in-0:              
+            group: videoproccessing
+            destination: fireresponsesystem
+            contentType: application/json  
+          producer-out-0:
+            destination: fireresponsesystem
+            contentType: application/json
+            
+---
+spring:
+  config:
+    import: optional:classpath:application-secret.yml

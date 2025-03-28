@@ -1,0 +1,98 @@
+name: github-action
+run-name: ${{ github.actor }} is out building GitHub Actions
+
+on:
+  push:
+    # Pattern matched against refs/tags
+    tags:        
+      - '**' 
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build Maven Projects
+        run: |
+          mvn clean package -f ./reportmanagement/pom.xml
+          mvn clean package -f ./videoproccessing/pom.xml
+          mvn clean package -f ./eventmanagement/pom.xml
+          mvn clean package -f ./aianalysis/pom.xml
+          mvn clean package -f ./feedservice/pom.xml
+          mvn clean package -f ./notification/pom.xml
+
+      - name: Docker Build and push for Reportmanagement
+        uses: docker/build-push-action@v4
+        with:
+          context: ./reportmanagement
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/reportmanagement:latest
+            ghcr.io/${{ github.repository }}/reportmanagement:${{ github.ref_name }}
+            
+      - name: Docker Build and push for Videoproccessing
+        uses: docker/build-push-action@v4
+        with:
+          context: ./videoproccessing
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/videoproccessing:latest
+            ghcr.io/${{ github.repository }}/videoproccessing:${{ github.ref_name }}
+            
+      - name: Docker Build and push for Eventmanagement
+        uses: docker/build-push-action@v4
+        with:
+          context: ./eventmanagement
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/eventmanagement:latest
+            ghcr.io/${{ github.repository }}/eventmanagement:${{ github.ref_name }}
+            
+      - name: Docker Build and push for Aianalysis
+        uses: docker/build-push-action@v4
+        with:
+          context: ./aianalysis
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/aianalysis:latest
+            ghcr.io/${{ github.repository }}/aianalysis:${{ github.ref_name }}
+            
+      - name: Docker Build and push for Feedservice
+        uses: docker/build-push-action@v4
+        with:
+          context: ./feedservice
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/feedservice:latest
+            ghcr.io/${{ github.repository }}/feedservice:${{ github.ref_name }}
+            
+      - name: Docker Build and push for Notification
+        uses: docker/build-push-action@v4
+        with:
+          context: ./notification
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/notification:latest
+            ghcr.io/${{ github.repository }}/notification:${{ github.ref_name }}
+            

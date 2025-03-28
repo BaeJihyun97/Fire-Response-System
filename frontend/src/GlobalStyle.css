@@ -1,0 +1,71 @@
+.border-color {
+    border:solid  1px !important;
+}
+
+.main-text-color {
+    color:  !important;
+}
+
+.secondary-text-color {
+    color:  !important;
+}
+
+.v-application {
+    background-color:  !important;
+}
+
+*{
+    font-family:  !important;
+}
+
+
+/* 메인 이미지와 텍스트 겹침 스타일 */
+.App-main-text-overlap {
+    position: absolute !important; 
+    top: 20px !important; 
+    left: 20px !important; 
+    color: black !important;
+    opacity: 0.8 !important; 
+    font-size: 42px !important; 
+    font-weight:700 !important; 
+    text-shadow: -2px 0 white, 0 2px white, 2px 0 white, 0 -2px white !important;
+}
+
+.App-sub-text-overlap {
+    position: absolute !important; 
+    bottom: 20px !important; 
+    left: 50% !important; 
+    transform: translateX(-50%) !important;
+    color: black !important; 
+    opacity: 0.8 !important; 
+    font-size: 28px !important; 
+    font-weight:500 !important; 
+    text-shadow: -2px 0 white, 0 2px white, 2px 0 white, 0 -2px white !important;
+}
+
+/* 메인 페이지 카드 뒤집기 스타일 */
+.flip-card {
+  perspective: 1000px !important;
+  width: 300px !important;
+  height: 300px !important;
+}
+.flip-card.is-flipped .flip-card-inner {
+  transform: rotateY(180deg) !important;
+}
+.flip-card-inner {
+  transition: transform 0.6s !important;
+  transform-style: preserve-3d !important;
+  position: relative !important;
+  transform-origin: center !important;
+  cursor: pointer !important;
+}
+.flip-card-front,
+.flip-card-back {
+  backface-visibility: hidden !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+}
+.flip-card-back {
+  transform: rotateY(180deg) !important;
+}
