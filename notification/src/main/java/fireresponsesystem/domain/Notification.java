@@ -30,11 +30,11 @@ public class Notification {
     ) {
         //implement business logic here:
 
-        /** Example 1:  new item 
+        /** Example 1:  new item  */
         Notification notification = new Notification();
         repository().save(notification);
 
-        */
+       
 
         /** Example 2:  finding and process
         
