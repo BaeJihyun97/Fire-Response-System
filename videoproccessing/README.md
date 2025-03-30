@@ -1,76 +1,142 @@
-# Install JDK 17
+# Video Processing System
 
-```
-sudo apt update  
-sudo apt install openjdk-17-jdk
+A video processing system that analyzes videos using OpenAI and Azure Video Indexer. The system uses event-driven architecture with Kafka for message passing and MongoDB for data storage.
 
-export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-```
+## Features
 
-# videoproccessing
+- Video upload and storage in Azure Blob Storage
+- Automatic video transcoding to 480p 30fps
+- Video analysis using Azure Video Indexer
+- Enhanced analysis using OpenAI
+- Event-driven architecture with Kafka
+- RESTful API with FastAPI
+- MongoDB storage with Beanie ODM
 
-## Running in local development environment
+## Prerequisites
 
-```
-mvn spring-boot:run
-```
+- Python 3.9 or higher
+- Poetry for dependency management
+- MongoDB
+- Kafka
+- OpenAI API key
+- Azure Video Indexer subscription
+- Azure Blob Storage account
+- FFmpeg installed on the system
 
-## Packaging and Running in docker environment
+## Environment Variables
 
-```
-mvn package -B -DskipTests
-docker build -t username/videoproccessing:v1 .
-docker run username/videoproccessing:v1
-```
+Create a `.env` file in the root directory with the following variables:
 
-## Push images and running in Kubernetes
+```env
+# OpenAI Configuration
+OPENAI_API_KEY=your_openai_api_key
 
-```
-docker login 
-# in case of docker hub, enter your username and password
+# Azure Video Indexer Configuration
+AZURE_VIDEO_INDEXER_ACCOUNT_ID=your_account_id
+AZURE_VIDEO_INDEXER_SUBSCRIPTION_KEY=your_subscription_key
+AZURE_VIDEO_INDEXER_LOCATION=your_location
 
-docker push username/videoproccessing:v1
-```
+# Azure Blob Storage Configuration
+AZURE_STORAGE_CONNECTION_STRING=your_storage_connection_string
+AZURE_STORAGE_CONTAINER_NAME=videos
 
-Edit the deployment.yaml under the /kubernetes directory:
-```
-    spec:
-      containers:
-        - name: videoproccessing
-          image: username/videoproccessing:latest   # change this image name
-          ports:
-            - containerPort: 8080
+# Kafka Configuration
+KAFKA_BOOTSTRAP_SERVERS=localhost:9092
 
-```
-
-Apply the yaml to the Kubernetes:
-```
-kubectl apply -f kubernetes/deployment.yaml
-```
-
-See the pod status:
-```
-kubectl get pods -l app=videoproccessing
+# MongoDB Configuration
+MONGODB_URL=mongodb://localhost:27017
 ```
 
-If you have no problem, you can connect to the service by opening a proxy between your local and the kubernetes by using this command:
-```
-# new terminal
-kubectl port-forward deploy/videoproccessing 8080:8080
+## Installation
 
-# another terminal
-http localhost:8080
-```
+1. Install FFmpeg:
+```bash
+# On macOS
+brew install ffmpeg
 
-If you have any problem on running the pod, you can find the reason by hitting this:
-```
-kubectl logs -l app=videoproccessing
+# On Ubuntu
+sudo apt-get update
+sudo apt-get install ffmpeg
 ```
 
-Following problems may be occurred:
+2. Clone the repository:
+```bash
+git clone <repository-url>
+cd video-processing-system
+```
 
-1. ImgPullBackOff:  Kubernetes failed to pull the image with the image name you've specified at the deployment.yaml. Please check your image name and ensure you have pushed the image properly.
-1. CrashLoopBackOff: The spring application is not running properly. If you didn't provide the kafka installation on the kubernetes, the application may crash. Please install kafka firstly:
+3. Install dependencies using Poetry:
+```bash
+poetry install
+```
 
-https://labs.msaez.io/#/courses/cna-full/full-course-cna/ops-utility
+4. Start the required services:
+```bash
+# Start MongoDB
+docker run -d -p 27017:27017 mongo
 
+# Start Kafka
+docker-compose up -d
+```
+
+5. Start the application:
+```bash
+poetry run uvicorn app.main:app --reload
+```
+
+## API Endpoints
+
+- `POST /videos`: Upload a new video
+  - Request body:
+    ```json
+    {
+        "video_url": "https://example.com/video.mp4",
+        "system_id": "sys123"
+    }
+    ```
+- `GET /videos/{video_id}`: Get video information
+- `DELETE /videos/{video_id}`: Delete a video and its files
+- `POST /videos/{video_id}/analyze`: Trigger video analysis
+- `GET /videos/{video_id}/analysis`: Get video analysis reports
+
+## Video Processing Flow
+
+1. When a video is uploaded:
+   - The original video is stored in Azure Blob Storage
+   - A video document is created in MongoDB
+   - The video is transcoded to 480p 30fps
+   - The transcoded video is stored in Azure Blob Storage
+   - The video document is updated with the transcoded video URL
+
+2. When video analysis is triggered:
+   - The video is analyzed using Azure Video Indexer
+   - OpenAI enhances the analysis results
+   - Results are stored in MongoDB
+   - Events are published to Kafka for further processing
+
+## Architecture
+
+The system follows an event-driven architecture:
+
+1. Videos are uploaded through the REST API
+2. Video stored events are published to Kafka
+3. Analysis is triggered asynchronously
+4. Results are stored in MongoDB
+5. Analysis completion events are published to Kafka
+
+## Development
+
+- Format code:
+```bash
+poetry run black .
+poetry run isort .
+```
+
+- Run tests:
+```bash
+poetry run pytest
+```
+
+## License
+
+MIT
