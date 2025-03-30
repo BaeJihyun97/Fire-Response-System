@@ -1,0 +1,122 @@
+import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
+
+export const useNotificationStore = defineStore('notifications', () => {
+  // 상태
+  const notifications = ref([
+    {
+      id: 1,
+      type: 'emergency',
+      title: '긴급 화재 알림',
+      message: '강남역 부근에 화재가 발생했습니다. 해당 지역 방문을 자제해 주세요.',
+      time: '5분 전',
+      read: false,
+      actionText: '상세 정보 보기',
+      actionLink: '/report/1'
+    },
+    {
+      id: 2,
+      type: 'verification',
+      title: '화재 제보 확인',
+      message: '귀하의 화재 제보가 소방서에 의해 확인되었습니다.',
+      time: '30분 전',
+      read: false,
+      actionText: '제보 확인하기',
+      actionLink: '/report/2'
+    },
+    {
+      id: 3,
+      type: 'social',
+      title: '댓글 알림',
+      message: '안전지킴이님이 귀하의 제보에 댓글을 남겼습니다: "정확한 위치 알 수 있을까요?"',
+      time: '1시간 전',
+      read: true,
+      actionText: '댓글 보기',
+      actionLink: '/report/3#comments'
+    },
+    {
+      id: 4,
+      type: 'danger',
+      title: '위험 알림',
+      message: '5명이 귀하의 화재 제보에 위험하다고 표시했습니다.',
+      time: '2시간 전',
+      read: true,
+      actionText: '게시물 보기',
+      actionLink: '/report/3'
+    },
+    {
+      id: 5,
+      type: 'info',
+      title: '안전 정보',
+      message: '오늘은 건조 특보가 발령되었습니다. 화재에 주의하세요.',
+      time: '3시간 전',
+      read: true,
+      actionText: '안전 수칙 보기',
+      actionLink: '/safety-tips'
+    },
+    {
+      id: 6,
+      type: 'emergency',
+      title: '주변 지역 화재 알림',
+      message: '귀하의 위치에서 5km 이내에 화재가 발생했습니다. 외출 시 주의하세요.',
+      time: '4시간 전',
+      read: true,
+      actionText: '지도 보기',
+      actionLink: '/map'
+    }
+  ])
+
+  // 게터
+  const unreadCount = computed(() => {
+    return notifications.value.filter(notification => !notification.read).length
+  })
+
+  const getByType = (type) => {
+    if (type === 'all') {
+      return notifications.value
+    }
+    return notifications.value.filter(notification => notification.type === type)
+  }
+
+  // 액션
+  function markAllAsRead() {
+    notifications.value = notifications.value.map(notification => ({
+      ...notification,
+      read: true
+    }))
+  }
+
+  function toggleReadStatus(notificationId) {
+    const index = notifications.value.findIndex(n => n.id === notificationId)
+    if (index !== -1) {
+      notifications.value[index].read = !notifications.value[index].read
+    }
+  }
+
+  function markAsRead(notificationId) {
+    const index = notifications.value.findIndex(n => n.id === notificationId)
+    if (index !== -1) {
+      notifications.value[index].read = true
+    }
+  }
+
+  function addNotification(notification) {
+    const newId = Math.max(...notifications.value.map(n => n.id)) + 1
+    notifications.value.unshift({
+      id: newId,
+      read: false,
+      time: '방금 전',
+      ...notification
+    })
+  }
+
+  return {
+    notifications,
+    unreadCount,
+    getByType,
+    markAllAsRead,
+    toggleReadStatus,
+    markAsRead,
+    addNotification
+  }
+})
