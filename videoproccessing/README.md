@@ -22,3 +22,9 @@ A video processing system that analyzes videos using OpenAI and Azure Video Inde
 - Azure Video Indexer subscription
 - Azure Blob Storage account
 - FFmpeg installed on the system
+
+## Run locally
+
+```bash
+$ poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
