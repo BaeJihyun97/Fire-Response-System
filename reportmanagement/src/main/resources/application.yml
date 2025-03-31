@@ -18,7 +18,8 @@ spring:
         implicit_naming_strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
   cloud:
     function:
-      routing-expression: "headers['type']=='VideoAnalysisFailed' ? 'wheneverVideoAnalysisFailed_UpdateReport' : headers['type']=='IdentifiedAsNonFireEvent' ? 'wheneverIdentifiedAsNonFireEvent_UpdateReport' : headers['type']=='EventCreated' ? 'wheneverEventCreated_EventIdUpdate' : headers['type']=='AssignedToEvent' ? 'wheneverAssignedToEvent_EventIdUpdate' : new String(headers['type'])=='VideoSaved' ? 'wheneverVideoSaved_VideoIdUpdate' : 'discardFunction'"
+      routing-expression: "headers['type'] != null ? 'routeMessage' : 'discardFunction'"
+      # routing-expression: "headers['type']=='VideoAnalysisFailed' ? 'wheneverVideoAnalysisFailed_UpdateReport' : headers['type']=='IdentifiedAsNonFireEvent' ? 'wheneverIdentifiedAsNonFireEvent_UpdateReport' : headers['type']=='EventCreated' ? 'wheneverEventCreated_EventIdUpdate' : headers['type']=='AssignedToEvent' ? 'wheneverAssignedToEvent_EventIdUpdate' : 'discardFunction'"
     stream:
       kafka:
         binder:
@@ -54,7 +55,15 @@ spring:
         implicit_naming_strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
   cloud:
     function:
-      routing-expression: "headers['type']=='VideoAnalysisFailed' ? 'wheneverVideoAnalysisFailed_UpdateReport' : headers['type']=='IdentifiedAsNonFireEvent' ? 'wheneverIdentifiedAsNonFireEvent_UpdateReport' : headers['type']=='EventCreated' ? 'wheneverEventCreated_EventIdUpdate' : headers['type']=='AssignedToEvent' ? 'wheneverAssignedToEvent_EventIdUpdate' : 'discardFunction'"
+      routing-expression: "headers['type'] != null ? 'routeMessage' : 'discardFunction'"
+    #   routing-expression: > 
+    #     headers['type'] != null &&
+    #     T(java.lang.String).new((byte[]) headers['type'], T(java.nio.charset.StandardCharsets).UTF_8).equals('VideoAnalysisFailed') ? 'wheneverVideoAnalysisFailed_UpdateReport' :
+    #     T(java.lang.String).new((byte[]) headers['type'], T(java.nio.charset.StandardCharsets).UTF_8).equals('IdentifiedAsNonFireEvent') ? 'wheneverIdentifiedAsNonFireEvent_UpdateReport' :
+    #     T(java.lang.String).new((byte[]) headers['type'], T(java.nio.charset.StandardCharsets).UTF_8).equals('EventCreated') ? 'wheneverEventCreated_EventIdUpdate' :
+    #     T(java.lang.String).new((byte[]) headers['type'], T(java.nio.charset.StandardCharsets).UTF_8).equals('AssignedToEvent') ? 'wheneverAssignedToEvent_EventIdUpdate' :
+    #     T(java.lang.String).new((byte[]) headers['type'], T(java.nio.charset.StandardCharsets).UTF_8).equals('VideoSaved') ? 'wheneverVideoSaved_VideoIdUpdate' :
+    #     'discardFunction'
     stream:
       kafka:
         binder:

@@ -1,0 +1,16 @@
+routing-expression: >
+  T(byte[]).isInstance(headers['type'])
+  ? (new String((byte[]) headers['type']) == 'VideoSaved' ? 'wheneverVideoSaved_VideoIdUpdate' : 'discardFunction') 
+  : (headers['type'] == 'VideoAnalysisFailed' ? 'wheneverVideoAnalysisFailed_UpdateReport' 
+  : headers['type'] == 'IdentifiedAsNonFireEvent' ? 'wheneverIdentifiedAsNonFireEvent_UpdateReport' 
+  : headers['type'] == 'EventCreated' ? 'wheneverEventCreated_EventIdUpdate' 
+  : headers['type'] == 'AssignedToEvent' ? 'wheneverAssignedToEvent_EventIdUpdate' 
+  : headers['type'] == 'VideoSaved' ? 'wheneverVideoSaved_VideoIdUpdate' 
+  : 'discardFunction')
+
+
+(T(byte[]).isInstance(headers['type']) ? new String((byte[]) headers['type']) : headers['type'])
+
+(byte[]) message.getHeaders().get("type");
+
+new String((byte[])headers['type'], StandardCharsets.UTF_8);
