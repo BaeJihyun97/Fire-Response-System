@@ -9,7 +9,7 @@ import lombok.*;
 @ToString
 public class StatusUpdated extends AbstractEvent {
 
-    private String eventId;
+    private Long eventId;
     private Float longitude;
     private Float latitude;
     private String status;

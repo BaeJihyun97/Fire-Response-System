@@ -40,7 +40,15 @@ public class PolicyHandler {
     public Consumer<Message<VideoAnalysisFailed>> wheneverVideoAnalysisFailed_NotifyVideoAnalysisFailed() {
         return event -> {
             VideoAnalysisFailed videoAnalysisFailed = event.getPayload();
-            Notification.notifyVideoAnalysisFailed(videoAnalysisFailed);
+            UserAlarm.notifyVideoAnalysisFailed(videoAnalysisFailed);
+        };
+    }
+
+    @Bean
+    public Consumer<Message<FireEventNotified>> wheneverFireEventNotified_NotifyByLocation() {
+        return event -> {
+            FireEventNotified fireEventNotified = event.getPayload();
+            UserAlarm.notifyByLocation(fireEventNotified);
         };
     }
 }

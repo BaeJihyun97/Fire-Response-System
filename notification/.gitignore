@@ -44,5 +44,3 @@ secrets.yml
 node_modules
 .dist/
 .pem
-# application-secret.yml
-# ./src/main/resources/application-secret.yml

@@ -10,7 +10,7 @@ import lombok.*;
 public class VideoAnalysisFailed extends AbstractEvent {
 
     private String videoId;
-    private String reportId;
+    private Long reportId;
     private String originalVideoUri;
     private String blurredVideoUri;
     private Boolean fireDetected;

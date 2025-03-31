@@ -18,7 +18,7 @@ spring:
         implicit_naming_strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
   cloud:
     function:
-      routing-expression: "headers['type']=='IdentifiedAsFireEvent' ? 'wheneverIdentifiedAsFireEvent_NotifyFireEvent' : headers['type']=='StatusUpdated' ? 'wheneverStatusUpdated_NotifyFireEventUpdated' : headers['type']=='VideoAnalysisFailed' ? 'wheneverVideoAnalysisFailed_NotifyVideoAnalysisFailed' : 'discardFunction'"
+      routing-expression: "headers['type']=='IdentifiedAsFireEvent' ? 'wheneverIdentifiedAsFireEvent_NotifyFireEvent' : headers['type']=='StatusUpdated' ? 'wheneverStatusUpdated_NotifyFireEventUpdated' : headers['type']=='VideoAnalysisFailed' ? 'wheneverVideoAnalysisFailed_NotifyVideoAnalysisFailed' : headers['type']=='FireEventNotified' ? 'wheneverFireEventNotified_NotifyByLocation' : 'discardFunction'"
     stream:
       kafka:
         binder:
@@ -54,7 +54,7 @@ spring:
         implicit_naming_strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
   cloud:
     function:
-      routing-expression: "headers['type']=='IdentifiedAsFireEvent' ? 'wheneverIdentifiedAsFireEvent_NotifyFireEvent' : headers['type']=='StatusUpdated' ? 'wheneverStatusUpdated_NotifyFireEventUpdated' : headers['type']=='VideoAnalysisFailed' ? 'wheneverVideoAnalysisFailed_NotifyVideoAnalysisFailed' : 'discardFunction'"
+      routing-expression: "headers['type']=='IdentifiedAsFireEvent' ? 'wheneverIdentifiedAsFireEvent_NotifyFireEvent' : headers['type']=='StatusUpdated' ? 'wheneverStatusUpdated_NotifyFireEventUpdated' : headers['type']=='VideoAnalysisFailed' ? 'wheneverVideoAnalysisFailed_NotifyVideoAnalysisFailed' : headers['type']=='FireEventNotified' ? 'wheneverFireEventNotified_NotifyByLocation' : 'discardFunction'"
     stream:
       kafka:
         binder:
@@ -67,10 +67,5 @@ spring:
           producer-out-0:
             destination: fireresponsesystem
             contentType: application/json
-
----
-spring:
-  config:
-    import: optional:classpath:application-secret.yml
-       
+            
 
