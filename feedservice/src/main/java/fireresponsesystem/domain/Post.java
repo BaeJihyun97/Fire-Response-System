@@ -72,7 +72,7 @@ public class Post {
     public static void publishPost(EventCreated eventCreated) {
         //implement business logic here:
 
-        /** Example 1:  new item 
+        /** Example 1:  new item
         Post post = new Post();
         repository().save(post);
 
@@ -81,9 +81,9 @@ public class Post {
         */
 
         /** Example 2:  finding and process
-        
+
         repository().findById(eventCreated.get???()).ifPresent(post->{
-            
+
             post // do something
             repository().save(post);
 
@@ -97,10 +97,10 @@ public class Post {
 
     //>>> Clean Arch / Port Method
     //<<< Clean Arch / Port Method
-    public static void postUpdated(FaceBlurred faceBlurred) {
+    public static void updatePost(FaceBlurred faceBlurred) {
         //implement business logic here:
 
-        /** Example 1:  new item 
+        /** Example 1:  new item
         Post post = new Post();
         repository().save(post);
 
@@ -109,9 +109,9 @@ public class Post {
         */
 
         /** Example 2:  finding and process
-        
+
         repository().findById(faceBlurred.get???()).ifPresent(post->{
-            
+
             post // do something
             repository().save(post);
 
@@ -125,12 +125,12 @@ public class Post {
 
     //>>> Clean Arch / Port Method
     //<<< Clean Arch / Port Method
-    public static void postUpdated(
+    public static void updatePost(
         IdentifiedAsFireEvent identifiedAsFireEvent
     ) {
         //implement business logic here:
 
-        /** Example 1:  new item 
+        /** Example 1:  new item
         Post post = new Post();
         repository().save(post);
 
@@ -139,9 +139,9 @@ public class Post {
         */
 
         /** Example 2:  finding and process
-        
+
         repository().findById(identifiedAsFireEvent.get???()).ifPresent(post->{
-            
+
             post // do something
             repository().save(post);
 

@@ -18,16 +18,16 @@ spring:
         implicit_naming_strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
   cloud:
     function:
-      routing-expression: "headers['type']=='EventCreated' ? 'wheneverEventCreated_PublishPost' : headers['type']=='FaceBlurred' ? 'wheneverFaceBlurred_PostUpdated' : headers['type']=='IdentifiedAsFireEvent' ? 'wheneverIdentifiedAsFireEvent_PostUpdated' : 'discardFunction'"
+      routing-expression: "headers['type'] != null ? 'routeMessage' : 'discardFunction'"
     stream:
       kafka:
         binder:
           brokers: localhost:9092
       bindings:
-          functionRouter-in-0:              
+          functionRouter-in-0:
             group: feedservice
             destination: fireresponsesystem
-            contentType: application/json  
+            contentType: application/json
           producer-out-0:
             destination: fireresponsesystem
             contentType: application/json
@@ -54,18 +54,18 @@ spring:
         implicit_naming_strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
   cloud:
     function:
-      routing-expression: "headers['type']=='EventCreated' ? 'wheneverEventCreated_PublishPost' : headers['type']=='FaceBlurred' ? 'wheneverFaceBlurred_PostUpdated' : headers['type']=='IdentifiedAsFireEvent' ? 'wheneverIdentifiedAsFireEvent_PostUpdated' : 'discardFunction'"
+      routing-expression: "headers['type'] != null ? 'routeMessage' : 'discardFunction'"
     stream:
       kafka:
         binder:
           brokers: my-kafka:9092
       bindings:
-          functionRouter-in-0:              
+          functionRouter-in-0:
             group: feedservice
             destination: fireresponsesystem
-            contentType: application/json  
+            contentType: application/json
           producer-out-0:
             destination: fireresponsesystem
             contentType: application/json
-            
+
 
