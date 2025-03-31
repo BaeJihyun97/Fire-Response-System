@@ -43,25 +43,25 @@ public class PolicyHandler {
             switch (type) {
                 case "VideoAnalysisFailed":
                     System.out.println("VideoAnalysisFailed");
-                    VideoAnalysisFailed videoAnalysisFailed = (VideoAnalysisFailed) message.getPayload();
+                    VideoAnalysisFailed videoAnalysisFailed = objectMapper.convertValue(message.getPayload(), VideoAnalysisFailed.class);
                     Report.updateReport(videoAnalysisFailed);
                     break;
 
                 case "IdentifiedAsNonFireEvent":
                     System.out.println("IdentifiedAsNonFireEvent");
-                    IdentifiedAsNonFireEvent identifiedAsNonFireEvent = (IdentifiedAsNonFireEvent) message.getPayload();
+                    IdentifiedAsNonFireEvent identifiedAsNonFireEvent = objectMapper.convertValue(message.getPayload(), IdentifiedAsNonFireEvent.class);
                     Report.updateReport(identifiedAsNonFireEvent);
                     break;
 
                 case "EventCreated":
                     System.out.println("EventCreated");
-                    EventCreated eventCreated = (EventCreated) message.getPayload();
+                    EventCreated eventCreated = objectMapper.convertValue(message.getPayload(), EventCreated.class);
                     Report.eventIdUpdate(eventCreated);
                     break;
 
                 case "AssignedToEvent":
                     System.out.println("AssignedToEvent");
-                    AssignedToEvent assignedToEvent = (AssignedToEvent) message.getPayload();
+                    AssignedToEvent assignedToEvent = objectMapper.convertValue(message.getPayload(), AssignedToEvent.class);
                     Report.eventIdUpdate(assignedToEvent);
                     break;
 

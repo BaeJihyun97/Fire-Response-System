@@ -5,6 +5,19 @@ server:
 
 spring:
   profiles: default
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: spring-gateway-client
+            client-secret: oP5iWXLY576JPew6EWKudcpfN2nQcVOp
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope: openid, profile, email
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8080/realms/my-realm
   cloud:
     gateway:
 #<<< API Gateway / Routes
@@ -34,10 +47,10 @@ spring:
           predicates:
             - Path=/notifications/**, 
         - id: frontend
-          uri: http://localhost:8080
+          uri: http://localhost:8089
           predicates:
             - Path=/**
-#>>> API Gateway / Routes
+
       globalcors:
         corsConfigurations:
           '[/**]':
