@@ -11,6 +11,7 @@
 .#*
 .*.md.html
 .DS_Store
+.vscode/
 .classpath
 .factorypath
 .gradle

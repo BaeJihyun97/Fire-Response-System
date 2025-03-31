@@ -7,7 +7,7 @@ from pydantic import BaseModel
 TOPICS = {
     "video_stored": "video.stored",
     "video_analysis_requested": "video.analysis.requested",
-    "video_analysis_completed": "video.analysis.completed"
+    "video_analysis_completed": "video.analysis.completed",
 }
 
 
@@ -20,9 +20,10 @@ class VideoStoredEvent(BaseModel):
 
 
 class VideoAnalysisRequestedEvent(BaseModel):
-    video_id: str
-    report_id: str
-    event_id: str
+    video_id: int
+    report_id: int
+    event_id: int
+    user_id: int
 
 
 class VideoAnalysisCompletedEvent(BaseModel):

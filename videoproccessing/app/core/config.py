@@ -26,9 +26,7 @@ class Settings(BaseSettings):
 
     # Application Settings
     max_file_size: int = Field(default=100 * 1024 * 1024)  # 100MB in bytes
-    allowed_video_extensions: Set[str] = Field(
-        default={".mp4", ".mov", ".avi", ".mkv"}
-    )
+    allowed_video_extensions: Set[str] = Field(default={".mp4", ".mov", ".avi", ".mkv"})
 
     class Config:
         env_file = ".env"

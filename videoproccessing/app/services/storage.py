@@ -9,8 +9,12 @@ class AzureBlobStorage:
         settings = get_settings()
         self.connection_string = settings.azure_storage_connection_string
         self.container_name = settings.azure_storage_container_name
-        self.blob_service_client = BlobServiceClient.from_connection_string(self.connection_string)
-        self.container_client = self.blob_service_client.get_container_client(self.container_name)
+        self.blob_service_client = BlobServiceClient.from_connection_string(
+            self.connection_string
+        )
+        self.container_client = self.blob_service_client.get_container_client(
+            self.container_name
+        )
 
     def upload_video(self, file_content: bytes, blob_path: str) -> str:
         """Upload a video file to Azure Blob Storage."""
@@ -28,7 +32,7 @@ class AzureBlobStorage:
                 blob_name=blob_path,
                 account_key=self.blob_service_client.credential.account_key,
                 permission=BlobSasPermissions(read=True),
-                expiry=datetime.utcnow() + timedelta(hours=24)
+                expiry=datetime.utcnow() + timedelta(hours=24),
             )
 
             # Construct the full URL
@@ -47,9 +51,11 @@ class AzureBlobStorage:
             # Extract blob name from the URI
             parsed_url = urlparse(processed_video_uri)
             # Remove the container name from the path
-            path_parts = parsed_url.path.split('/')
+            path_parts = parsed_url.path.split("/")
             if len(path_parts) > 2:
-                blob_name = '/'.join(path_parts[2:])  # Skip container name and leading slash
+                blob_name = "/".join(
+                    path_parts[2:]
+                )  # Skip container name and leading slash
             else:
                 blob_name = path_parts[-1]
 
@@ -88,7 +94,7 @@ class AzureBlobStorage:
                 blob_name=blob_name,
                 account_key=self.blob_service_client.credential.account_key,
                 permission=BlobSasPermissions(read=True),
-                expiry=datetime.utcnow() + timedelta(hours=24)
+                expiry=datetime.utcnow() + timedelta(hours=24),
             )
 
             # Construct the full URL
@@ -109,7 +115,9 @@ class AzureBlobStorage:
 
             # Delete all frames
             frames_prefix = f"{video_id}/frames/"
-            for blob in self.container_client.list_blobs(name_starts_with=frames_prefix):
+            for blob in self.container_client.list_blobs(
+                name_starts_with=frames_prefix
+            ):
                 blob_client = self.container_client.get_blob_client(blob.name)
                 blob_client.delete_blob()
 
@@ -120,4 +128,4 @@ class AzureBlobStorage:
     def get_blob_name(self, video_url: str) -> str:
         """Extract blob name from video URL."""
         parsed_url = urlparse(video_url)
-        return parsed_url.path.split('/')[-1]
+        return parsed_url.path.split("/")[-1]

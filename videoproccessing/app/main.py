@@ -1,6 +1,14 @@
 import os
 from typing import List
-from fastapi import FastAPI, HTTPException, BackgroundTasks, File, UploadFile, Form, Depends
+from fastapi import (
+    FastAPI,
+    HTTPException,
+    BackgroundTasks,
+    File,
+    UploadFile,
+    Form,
+    Depends,
+)
 from beanie import init_beanie
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
@@ -9,11 +17,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.core.config import Settings, get_settings
-from app.models.video import Video, VideoAnalysisReport
-from app.schemas.events import (
-    VideoAnalysisCompletedEvent,
-    TOPICS
-)
+from app.models.video import Counter, Video, VideoAnalysisReport
+from app.schemas.events import VideoAnalysisCompletedEvent, TOPICS
 from app.messaging.kafka import KafkaProducer, KafkaConsumer
 from app.services.video_analysis import VideoAnalysisService
 from app.services.video_manager import VideoManager
@@ -25,7 +30,7 @@ class VideoUploadRequest(BaseModel):
 
 
 class VideoUploadResponse(BaseModel):
-    video_id: str
+    video_id: int
     original_video_uri: str
     status: str
 
@@ -45,20 +50,16 @@ async def startup():
 
     # Initialize global services
     global kafka_producer, video_analysis_service, video_manager, kafka_consumer
-    kafka_producer = KafkaProducer(
-        bootstrap_servers=settings.kafka_bootstrap_servers
-    )
+    kafka_producer = KafkaProducer(bootstrap_servers=settings.kafka_bootstrap_servers)
     video_analysis_service = VideoAnalysisService()
     video_manager = VideoManager()
-    kafka_consumer = KafkaConsumer(
-        bootstrap_servers=settings.kafka_bootstrap_servers
-    )
+    kafka_consumer = KafkaConsumer(bootstrap_servers=settings.kafka_bootstrap_servers)
 
     # Initialize MongoDB connection
     client = AsyncIOMotorClient(settings.mongodb_url)
     await init_beanie(
         database=client[settings.mongodb_db_name],
-        document_models=[Video, VideoAnalysisReport]
+        document_models=[Counter, Video, VideoAnalysisReport],
     )
 
 
@@ -118,8 +119,8 @@ app.add_middleware(
 @app.post("/videos/upload", response_model=VideoUploadResponse)
 async def upload_video(
     file: UploadFile = File(...),
-    report_id: str = Form(...),
-    settings: Settings = Depends(get_settings)
+    report_id: int = Form(...),
+    settings: Settings = Depends(get_settings),
 ):
     """Upload a video file directly."""
     # Validate file extension
@@ -127,7 +128,7 @@ async def upload_video(
     if file_ext not in settings.allowed_video_extensions:
         raise HTTPException(
             status_code=400,
-            detail=f"File type not allowed. Allowed types: {', '.join(settings.allowed_video_extensions)}"
+            detail=f"File type not allowed. Allowed types: {', '.join(settings.allowed_video_extensions)}",
         )
 
     try:
@@ -138,16 +139,18 @@ async def upload_video(
         if len(content) > settings.max_file_size:
             raise HTTPException(
                 status_code=400,
-                detail=f"File too large. Maximum size allowed: {settings.max_file_size/1024/1024}MB"
+                detail=f"File too large. Maximum size allowed: {settings.max_file_size/1024/1024}MB",
             )
 
         # Process video using video manager
-        video = await video_manager.process_video_file(report_id=report_id, file_content=content)
+        video = await video_manager.process_video_file(
+            report_id=report_id, file_content=content
+        )
 
         return VideoUploadResponse(
             video_id=video.video_id,
             original_video_uri=video.original_video_uri,
-            status=video.status
+            status=video.status,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -211,16 +214,14 @@ async def process_video_analysis(video: Video, report: VideoAnalysisReport):
 
         if updated_report:
             event = VideoAnalysisCompletedEvent(
-                video_id=video.video_id,
-                report_id=report.report_id,
-                success=True
+                video_id=video.video_id, report_id=report.report_id, success=True
             )
         else:
             event = VideoAnalysisCompletedEvent(
                 video_id=video.video_id,
                 report_id=report.report_id,
                 success=False,
-                error_message="Analysis failed"
+                error_message="Analysis failed",
             )
 
         kafka_producer.publish(TOPICS["video_analysis_completed"], event)
@@ -231,17 +232,14 @@ async def process_video_analysis(video: Video, report: VideoAnalysisReport):
             video_id=video.video_id,
             report_id=report.report_id,
             success=False,
-            error_message=str(e)
+            error_message=str(e),
         )
         kafka_producer.publish(TOPICS["video_analysis_completed"], event)
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
-        "app.main:app",
-        host="0.0.0.0",
-        port=8001,
-        reload=True,
-        log_level="info"
+        "app.main:app", host="0.0.0.0", port=8001, reload=True, log_level="info"
     )

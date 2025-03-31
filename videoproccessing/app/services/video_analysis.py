@@ -9,10 +9,8 @@ from app.core.config import get_settings
 from app.services.storage import AzureBlobStorage
 import cv2
 import numpy as np
-from datetime import datetime
 import asyncio
 from langchain_openai import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
 from langchain.output_parsers.json import SimpleJsonOutputParser
 from langchain_core.messages import SystemMessage, HumanMessage
 
@@ -22,7 +20,7 @@ class VideoAnalysisService:
         self.settings = get_settings()
         self.storage = AzureBlobStorage()
         self.frame_size = (640, 480)  # Target frame size
-        self.max_frames = 10  # Maximum number of frames to extract
+        self.max_frames = 30  # Maximum number of frames to extract
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
@@ -45,11 +43,11 @@ class VideoAnalysisService:
                 # Create analysis report
                 report = VideoAnalysisReport(
                     video_id=video.video_id,
-                    total_frames=len(frames),
-                    frame_interval=1,  # Not used anymore since we use equal spacing
-                    frame_size=self.frame_size,
-                    extracted_at=datetime.utcnow()
+                    report_id=video.report_id,
+                    frame_count=len(frames),
                 )
+                report.video_analysis_id = await VideoAnalysisReport.get_next_sequence()
+                await report.save()
 
                 # Upload frames to storage
                 encoded_frames = []
@@ -59,9 +57,7 @@ class VideoAnalysisService:
                     base64_string = self._encode_image(frame_path)
                     encoded_frames.append(base64_string)
                     frame_url = self.storage.upload_frame(
-                        video_id=video.video_id,
-                        frame_number=i,
-                        frame_path=frame_path
+                        video_id=video.video_id, frame_number=i, frame_path=frame_path
                     )
                     report.frame_urls.append(frame_url)
 
@@ -96,7 +92,9 @@ class VideoAnalysisService:
             height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             duration = total_frames / fps
 
-            print(f"Video properties: {total_frames} frames, {fps} fps, {width}x{height}, duration: {duration:.2f}s")
+            print(
+                f"Video properties: {total_frames} frames, {fps} fps, {width}x{height}, duration: {duration:.2f}s"
+            )
 
             # Calculate frame indices for equal spacing
             frame_indices = np.linspace(0, total_frames - 1, self.max_frames, dtype=int)
@@ -114,7 +112,34 @@ class VideoAnalysisService:
 
                 # Resize frame if needed
                 if frame.shape[:2] != self.frame_size[::-1]:
-                    frame = cv2.resize(frame, self.frame_size)
+                    # Calculate aspect ratio
+                    h, w = frame.shape[:2]
+                    target_w, target_h = self.frame_size
+                    aspect_ratio = w / h
+
+                    # Calculate new dimensions maintaining aspect ratio
+                    if aspect_ratio > 1:  # wider than tall
+                        new_w = target_w
+                        new_h = int(target_w / aspect_ratio)
+                    else:  # taller than wide
+                        new_h = target_h
+                        new_w = int(target_h * aspect_ratio)
+
+                    # Resize maintaining aspect ratio
+                    frame = cv2.resize(frame, (new_w, new_h))
+
+                    # Create a black background of target size
+                    background = np.zeros((target_h, target_w, 3), dtype=np.uint8)
+
+                    # Calculate position to center the resized frame
+                    y_offset = (target_h - new_h) // 2
+                    x_offset = (target_w - new_w) // 2
+
+                    # Place the resized frame in the center of the background
+                    background[
+                        y_offset : y_offset + new_h, x_offset : x_offset + new_w
+                    ] = frame
+                    frame = background
 
                 frames.append(frame)
 
@@ -128,13 +153,15 @@ class VideoAnalysisService:
 
     def _encode_image(self, image_path: str):
         with open(image_path, "rb") as image_file:
-            return base64.b64encode(image_file.read()).decode('utf-8')
+            return base64.b64encode(image_file.read()).decode("utf-8")
 
     def _estimate_token_count(self, text: str, model: str = "gpt-4o") -> int:
         enc = tiktoken.encoding_for_model(model)
         return len(enc.encode(text))
 
-    def _batch_frames_by_token_limit(self, base64_frames: list, max_tokens: int = 100000) -> list[list[str]]:
+    def _batch_frames_by_token_limit(
+        self, base64_frames: list, max_tokens: int = 100000
+    ) -> list[list[str]]:
         batches = []
         current_batch = []
         current_token_total = 0
@@ -154,7 +181,6 @@ class VideoAnalysisService:
 
         return batches
 
-
     def _merge_fire_frame_analyses(self, results):
         def majority_vote(values):
             return Counter(values).most_common(1)[0][0]
@@ -162,7 +188,9 @@ class VideoAnalysisService:
         merged = {
             "fire_detected": any(r["fire_detected"] for r in results),
             "fire_size": majority_vote([r["fire_size"] for r in results]),
-            "flame_color": sorted(set(color for r in results for color in r["flame_color"])),
+            "flame_color": sorted(
+                set(color for r in results for color in r["flame_color"])
+            ),
             "smoke": {
                 "present": any(r["smoke"]["present"] for r in results),
                 "color": majority_vote([r["smoke"]["color"] for r in results]),
@@ -170,22 +198,40 @@ class VideoAnalysisService:
             },
             "location": {
                 "indoor": any(r["location"]["indoor"] for r in results),
-                "environment_description": majority_vote([r["location"]["environment_description"] for r in results]),
-                "nearby_objects": sorted(set(obj for r in results for obj in r["location"]["nearby_objects"])),
+                "environment_description": majority_vote(
+                    [r["location"]["environment_description"] for r in results]
+                ),
+                "nearby_objects": sorted(
+                    set(obj for r in results for obj in r["location"]["nearby_objects"])
+                ),
             },
             "people_or_animals": {
                 "present": any(r["people_or_animals"]["present"] for r in results),
-                "details": majority_vote([r["people_or_animals"]["details"] for r in results]),
+                "details": majority_vote(
+                    [r["people_or_animals"]["details"] for r in results]
+                ),
             },
             "fire_spread": {
                 "spreading": any(r["fire_spread"]["spreading"] for r in results),
-                "indicators": sorted(set(i for r in results for i in r["fire_spread"]["indicators"])),
+                "indicators": sorted(
+                    set(i for r in results for i in r["fire_spread"]["indicators"])
+                ),
             },
             "firefighting_response": {
-                "responders_present": any(r["firefighting_response"]["responders_present"] for r in results),
-                "tools_visible": sorted(set(tool for r in results for tool in r["firefighting_response"]["tools_visible"])),
+                "responders_present": any(
+                    r["firefighting_response"]["responders_present"] for r in results
+                ),
+                "tools_visible": sorted(
+                    set(
+                        tool
+                        for r in results
+                        for tool in r["firefighting_response"]["tools_visible"]
+                    )
+                ),
             },
-            "lighting_conditions": majority_vote([r["lighting_conditions"] for r in results]),
+            "lighting_conditions": majority_vote(
+                [r["lighting_conditions"] for r in results]
+            ),
         }
 
         return merged
@@ -193,9 +239,7 @@ class VideoAnalysisService:
     def _analyze_frames_with_llm(self, frames: List[str]) -> dict:
         """Analyze frames using GPT-4V model."""
         gpt4o_model = ChatOpenAI(
-            model="gpt-4o",
-            temperature=0.1,
-            openai_api_key=self.settings.openai_api_key
+            model="gpt-4o", temperature=0.1, openai_api_key=self.settings.openai_api_key
         )
 
         system_prompt = """
@@ -251,17 +295,17 @@ class VideoAnalysisService:
 
         for i, batch in enumerate(batches):
             print(f"Analyzing batch {i+1}/{len(batches)}...")
-            content = [
-                {"type": "text", "text": "Analyze the following image frames:"}
-            ]
+            content = [{"type": "text", "text": "Analyze the following image frames:"}]
             for frame in batch:
-                content.append({
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"data:image/jpeg;base64,{frame}",
-                        "detail": "high"
+                content.append(
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{frame}",
+                            "detail": "high",
+                        },
                     }
-                })
+                )
             human_message = HumanMessage(content=content)
 
             try:

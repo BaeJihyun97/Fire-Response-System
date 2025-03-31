@@ -7,24 +7,26 @@ from app.schemas.events import (
     VideoStoredEvent,
     VideoAnalysisCompletedEvent,
     VideoAnalysisRequestedEvent,
-    TOPICS
+    TOPICS,
 )
 
 
 class KafkaProducer:
     def __init__(self, bootstrap_servers: str):
-        self.producer = Producer({
-            'bootstrap.servers': bootstrap_servers,
-            'client.id': 'video-processing-producer'
-        })
+        self.producer = Producer(
+            {
+                "bootstrap.servers": bootstrap_servers,
+                "client.id": "video-processing-producer",
+            }
+        )
 
     def publish(self, topic: str, event: BaseModel):
         try:
             self.producer.produce(
                 topic,
                 key=None,
-                value=event.model_dump_json().encode('utf-8'),
-                callback=self._delivery_callback
+                value=event.model_dump_json().encode("utf-8"),
+                callback=self._delivery_callback,
             )
             self.producer.poll(0)
         except KafkaException as e:
@@ -33,24 +35,25 @@ class KafkaProducer:
 
     def _delivery_callback(self, err, msg):
         if err:
-            print(f'Message delivery failed: {str(err)}')
+            print(f"Message delivery failed: {str(err)}")
         else:
-            print(f'Message delivered to {msg.topic()} [{msg.partition()}]')
+            print(f"Message delivered to {msg.topic()} [{msg.partition()}]")
 
 
 class KafkaConsumer:
     def __init__(self, bootstrap_servers: str):
-        self.consumer = Consumer({
-            'bootstrap.servers': bootstrap_servers,
-            'group.id': 'video-processing-group',
-            'auto.offset.reset': 'earliest',
-            'enable.auto.commit': True
-        })
+        self.consumer = Consumer(
+            {
+                "bootstrap.servers": bootstrap_servers,
+                "group.id": "video-processing-group",
+                "auto.offset.reset": "earliest",
+                "enable.auto.commit": True,
+            }
+        )
         self.producer = KafkaProducer(bootstrap_servers)
         self.event_handlers: Dict[str, Callable] = {
             TOPICS["video_stored"]: self._handle_video_stored,
             TOPICS["video_analysis_requested"]: self._handle_analysis_requested,
-            TOPICS["video_analysis_completed"]: self._handle_analysis_completed
         }
         self.running = False
 
@@ -82,7 +85,7 @@ class KafkaConsumer:
                         continue
 
                     # Parse the message
-                    event_data = json.loads(msg.value().decode('utf-8'))
+                    event_data = json.loads(msg.value().decode("utf-8"))
                     print(f"Parsed event data: {event_data}")
 
                     # Get the appropriate event type based on the topic
@@ -111,7 +114,7 @@ class KafkaConsumer:
         event_types = {
             TOPICS["video_stored"]: VideoStoredEvent,
             TOPICS["video_analysis_requested"]: VideoAnalysisRequestedEvent,
-            TOPICS["video_analysis_completed"]: VideoAnalysisCompletedEvent
+            TOPICS["video_analysis_completed"]: VideoAnalysisCompletedEvent,
         }
         return event_types.get(topic)
 
@@ -125,10 +128,13 @@ class KafkaConsumer:
             print(f"Processing analysis requested event for video: {event.video_id}")
             # Import PolicyHandler here to avoid circular import
             from app.services.policy_handler import PolicyHandler
+
             policy_handler = PolicyHandler()
 
             # Process the event using policy handler
-            result = await policy_handler.handle_event("video_analysis_requested", event.model_dump())
+            result = await policy_handler.handle_event(
+                "video_analysis_requested", event.model_dump()
+            )
 
             if result["success"]:
                 print(result)
@@ -140,9 +146,11 @@ class KafkaConsumer:
                     event_id=event.event_id,
                     success=result["success"],
                     fire_detected=result["fire_detected"],
-                    error_message=None
+                    error_message=None,
                 )
-                self.producer.publish(TOPICS["video_analysis_completed"], completed_event)
+                self.producer.publish(
+                    TOPICS["video_analysis_completed"], completed_event
+                )
             else:
                 # Publish failed event
                 failed_event = VideoAnalysisCompletedEvent(
@@ -150,7 +158,7 @@ class KafkaConsumer:
                     report_id=event.report_id,
                     event_id=event.event_id,
                     success=False,
-                    error_message=result.get("error", "Unknown error")
+                    error_message=result.get("error", "Unknown error"),
                 )
                 self.producer.publish(TOPICS["video_analysis_completed"], failed_event)
 
@@ -161,7 +169,7 @@ class KafkaConsumer:
                 report_id=event.report_id,
                 event_id=event.event_id,
                 success=False,
-                error_message=str(e)
+                error_message=str(e),
             )
             self.producer.publish(TOPICS["video_analysis_completed"], failed_event)
 
@@ -171,16 +179,21 @@ class KafkaConsumer:
             print(f"Processing analysis completed event for video: {event.video_id}")
             # Import PolicyHandler here to avoid circular import
             from app.services.policy_handler import PolicyHandler
+
             policy_handler = PolicyHandler()
 
             # Process the event using policy handler
-            result = await policy_handler.handle_event("video_analysis_completed", event.model_dump())
+            result = await policy_handler.handle_event(
+                "video_analysis_completed", event.model_dump()
+            )
             print(f"Policy handler result: {result}")
 
             if result["success"]:
                 print(f"Analysis completed successfully for video {result['video_id']}")
             else:
-                print(f"Analysis failed for video {result['video_id']}: {result.get('error')}")
+                print(
+                    f"Analysis failed for video {result['video_id']}: {result.get('error')}"
+                )
 
         except Exception as e:
             print(f"Error processing analysis completed event: {str(e)}")
