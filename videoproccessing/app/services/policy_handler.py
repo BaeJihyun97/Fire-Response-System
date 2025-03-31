@@ -55,7 +55,7 @@ class PolicyHandler:
 
             return {
                 "success": True,
-                "video_analysis_id": str(report.id),
+                "video_analysis_id": report.video_analysis_id,
                 "fire_detected": report.openai_analysis["fire_detected"],
             }
 

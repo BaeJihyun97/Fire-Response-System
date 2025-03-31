@@ -11,6 +11,7 @@ class Settings(BaseSettings):
 
     # Kafka
     kafka_bootstrap_servers: str = Field(default="localhost:9092")
+    azure_event_hub_connection_string: str
 
     # Azure Blob Storage
     azure_storage_connection_string: str
@@ -18,8 +19,14 @@ class Settings(BaseSettings):
 
     # Azure Video Indexer
     azure_video_indexer_account_id: str
+    azure_video_indexer_account_name: str
+    azure_video_indexer_subscription_id: str
     azure_video_indexer_subscription_key: str
     azure_video_indexer_location: str = Field(default="trial")
+    azure_video_indexer_resource_group: str
+    azure_tenant_id: str
+    azure_client_id: str
+    azure_client_secret: str
 
     # OpenAI
     openai_api_key: str
@@ -31,6 +38,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = False
+        allow_extra = True
 
 
 @lru_cache()

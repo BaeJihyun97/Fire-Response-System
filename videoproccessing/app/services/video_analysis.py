@@ -4,7 +4,7 @@ import tempfile
 import tiktoken
 from collections import Counter
 from typing import Optional, List
-from app.models.video import Video, VideoAnalysisReport
+from app.models.video import Video, VideoAnalysisReport, VideoStatus
 from app.core.config import get_settings
 from app.services.storage import AzureBlobStorage
 import cv2
@@ -20,7 +20,7 @@ class VideoAnalysisService:
         self.settings = get_settings()
         self.storage = AzureBlobStorage()
         self.frame_size = (640, 480)  # Target frame size
-        self.max_frames = 30  # Maximum number of frames to extract
+        self.max_frames = 2  # Maximum number of frames to extract
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
@@ -64,6 +64,7 @@ class VideoAnalysisService:
                 # Analyze frames using GPT-4o model
                 analysis = self._analyze_frames_with_llm(encoded_frames)
                 report.openai_analysis = analysis
+                report.status = VideoStatus.COMPLETED
 
                 # Save the report
                 await report.save()

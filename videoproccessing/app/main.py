@@ -18,7 +18,7 @@ from contextlib import asynccontextmanager
 
 from app.core.config import Settings, get_settings
 from app.models.video import Counter, Video, VideoAnalysisReport
-from app.schemas.events import VideoAnalysisCompletedEvent, TOPICS
+from app.schemas.events import VideoAnalysisCompletedEvent, TOPICS, VideoStoredEvent
 from app.messaging.kafka import KafkaProducer, KafkaConsumer
 from app.services.video_analysis import VideoAnalysisService
 from app.services.video_manager import VideoManager
@@ -50,10 +50,10 @@ async def startup():
 
     # Initialize global services
     global kafka_producer, video_analysis_service, video_manager, kafka_consumer
-    kafka_producer = KafkaProducer(bootstrap_servers=settings.kafka_bootstrap_servers)
+    kafka_producer = KafkaProducer()
     video_analysis_service = VideoAnalysisService()
     video_manager = VideoManager()
-    kafka_consumer = KafkaConsumer(bootstrap_servers=settings.kafka_bootstrap_servers)
+    kafka_consumer = KafkaConsumer()
 
     # Initialize MongoDB connection
     client = AsyncIOMotorClient(settings.mongodb_url)
@@ -146,6 +146,15 @@ async def upload_video(
         video = await video_manager.process_video_file(
             report_id=report_id, file_content=content
         )
+
+        event = VideoStoredEvent(
+            video_id=video.video_id,
+            report_id=report_id,
+            original_video_uri=video.original_video_uri,
+            encoded_video_uri=video.processed_video_uri,
+        )
+
+        kafka_producer.publish("VideoSaved", event)
 
         return VideoUploadResponse(
             video_id=video.video_id,

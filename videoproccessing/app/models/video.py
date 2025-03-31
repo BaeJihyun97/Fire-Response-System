@@ -7,10 +7,10 @@ from pymongo import IndexModel, ASCENDING
 
 
 class VideoStatus(str, Enum):
-    PENDING = "pending"
-    PROCESSING = "processing"
-    COMPLETED = "completed"
-    FAILED = "failed"
+    PENDING = "PENDING"
+    PROCESSING = "PROCESSING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
 
 
 class VideoAnalysisTag(BaseModel):
@@ -66,6 +66,7 @@ class VideoAnalysisReport(Document):
     tags: List[VideoAnalysisTag] = []
     frame_urls: List[str] = []
     frame_count: int = 0
+    status: VideoStatus = VideoStatus.PENDING
     created_at: datetime = Field(default_factory=datetime.utcnow)
     openai_analysis: Optional[dict] = None
     azure_analysis: Optional[dict] = None
