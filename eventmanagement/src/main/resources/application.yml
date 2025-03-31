@@ -18,7 +18,8 @@ spring:
         implicit_naming_strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
   cloud:
     function:
-      routing-expression: "headers['type']=='ReportReceived' ? 'wheneverReportReceived_CreateEvent' : headers['type']=='ReportReceived' ? 'wheneverReportReceived_AssignToEvent' : headers['type']=='VideoAnalyzed' ? 'wheneverVideoAnalyzed_IdentifyAsFireEvent' : headers['type']=='Reacted' ? 'wheneverReacted_IdentifyAsFireEvent' : 'discardFunction'"
+      routing-expression: "headers['type'] != null ? 'routeMessage' : 'discardFunction'"
+      # "headers['type']=='ReportReceived' ? 'wheneverReportReceived_CreateEvent' : headers['type']=='ReportReceived' ? 'wheneverReportReceived_AssignToEvent' : headers['type']=='VideoAnalyzed' ? 'wheneverVideoAnalyzed_IdentifyAsFireEvent' : headers['type']=='Reacted' ? 'wheneverReacted_IdentifyAsFireEvent' : 'discardFunction'"
     stream:
       kafka:
         binder:
@@ -54,7 +55,8 @@ spring:
         implicit_naming_strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
   cloud:
     function:
-      routing-expression: "headers['type']=='ReportReceived' ? 'wheneverReportReceived_CreateEvent' : headers['type']=='ReportReceived' ? 'wheneverReportReceived_AssignToEvent' : headers['type']=='VideoAnalyzed' ? 'wheneverVideoAnalyzed_IdentifyAsFireEvent' : headers['type']=='Reacted' ? 'wheneverReacted_IdentifyAsFireEvent' : 'discardFunction'"
+      routing-expression: "headers['type'] != null ? 'routeMessage' : 'discardFunction'"
+      # "headers['type']=='ReportReceived' ? 'wheneverReportReceived_CreateEvent' : headers['type']=='ReportReceived' ? 'wheneverReportReceived_AssignToEvent' : headers['type']=='VideoAnalyzed' ? 'wheneverVideoAnalyzed_IdentifyAsFireEvent' : headers['type']=='Reacted' ? 'wheneverReacted_IdentifyAsFireEvent' : 'discardFunction'"
     stream:
       kafka:
         binder:

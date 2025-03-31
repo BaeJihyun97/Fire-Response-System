@@ -7,6 +7,6 @@ import lombok.Data;
 @Data
 public class UpdateStatusCommand {
 
-    private String eventId;
+    private Long eventId;
     private String status;
 }

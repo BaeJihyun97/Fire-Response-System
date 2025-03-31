@@ -108,6 +108,7 @@ public class Event {
             repository().save(newEvent);
             
             EventCreated eventCreated = new EventCreated(newEvent);
+            eventCreated.setReportId(reportReceived.getReportId());
             eventCreated.publishAfterCommit();
 
             System.out.println("[POLICY] eventCreated: " + eventCreated.getEventType());
@@ -118,6 +119,7 @@ public class Event {
             Event closestEvent = nearbyEvents.get(0);
             
             AssignedToEvent assignedToEvent = new AssignedToEvent(closestEvent);
+            assignedToEvent.setReportId(reportReceived.getReportId());
             assignedToEvent.publishAfterCommit();
 
             System.out.println("[POLICY] assignedToEvent: " + assignedToEvent.getEventType());
@@ -128,10 +130,29 @@ public class Event {
     }
 
     //<<< Clean Arch / Port Method
-    // POLICY '화재이벤트로변경' after EVENT'비디오분석완료'
+    // POLICY '화재이벤트로변경' after EVENT'비디오분석완료' (화재일경우만 발행)
     public static void identifyAsFireEvent(VideoAnalyzed videoAnalyzed) {
         //implement business logic here:
         repository().findByEventId(videoAnalyzed.getEventId()).ifPresent(event->{
+            
+            event.setEventType(videoAnalyzed.getFireDetected()?"fire":"nonFire"); // do something
+            repository().save(event);
+
+            if(videoAnalyzed.getFireDetected()) {
+                IdentifiedAsFireEvent identifiedAsFireEvent = new IdentifiedAsFireEvent(event);
+                identifiedAsFireEvent.publishAfterCommit();
+            }
+
+        });
+
+
+    }
+
+    //>>> Clean Arch / Port Method
+    //<<< Clean Arch / Port Method
+    public static void identifyAsFireEvent(Reacted reacted) {
+        //implement business logic here:        
+        repository().findByEventId(reacted.getEventId()).ifPresent(event->{
             
             event.setEventType("fire"); // do something
             repository().save(event);
@@ -141,35 +162,6 @@ public class Event {
 
             });
 
-
-    }
-
-    //>>> Clean Arch / Port Method
-    //<<< Clean Arch / Port Method
-    public static void identifyAsFireEvent(Reacted reacted) {
-        //implement business logic here:
-
-        /** Example 1:  new item 
-        Event event = new Event();
-        repository().save(event);
-
-        IdentifiedAsFireEvent identifiedAsFireEvent = new IdentifiedAsFireEvent(event);
-        identifiedAsFireEvent.publishAfterCommit();
-        */
-
-        /** Example 2:  finding and process
-        
-        repository().findById(reacted.get???()).ifPresent(event->{
-            
-            event // do something
-            repository().save(event);
-
-            IdentifiedAsFireEvent identifiedAsFireEvent = new IdentifiedAsFireEvent(event);
-            identifiedAsFireEvent.publishAfterCommit();
-
-            });
-        */
-
     }
     //>>> Clean Arch / Port Method
 
@@ -177,15 +169,19 @@ public class Event {
     public void updateEventType(UpdateEventTypeCommand updateEventTypeCommand) {
         //implement business logic here:
 
-        IdentifiedAsFireEvent identifiedAsFireEvent = new IdentifiedAsFireEvent(
-            this
-        );
-        identifiedAsFireEvent.publishAfterCommit();
+        repository().findByEventId(updateEventTypeCommand.getEventId()).ifPresent(event->{
 
-        IdentifiedAsNonFireEvent identifiedAsNonFireEvent = new IdentifiedAsNonFireEvent(
-            this
-        );
-        identifiedAsNonFireEvent.publishAfterCommit();
+            event.setEventType(updateEventTypeCommand.getEventType());
+            repository().save(event);
+
+            if(updateEventTypeCommand.getEventType().equals("fire")) {
+                IdentifiedAsFireEvent identifiedAsFireEvent = new IdentifiedAsFireEvent(this);
+                identifiedAsFireEvent.publishAfterCommit();
+            } else {
+                IdentifiedAsNonFireEvent identifiedAsNonFireEvent = new IdentifiedAsNonFireEvent(this); 
+                identifiedAsNonFireEvent.publishAfterCommit();
+            }
+        });
     }
 
     //>>> Clean Arch / Port Method
@@ -193,8 +189,16 @@ public class Event {
     public void updateStatus(UpdateStatusCommand updateStatusCommand) {
         //implement business logic here:
 
-        StatusUpdated statusUpdated = new StatusUpdated(this);
-        statusUpdated.publishAfterCommit();
+        repository().findByEventId(updateStatusCommand.getEventId()).ifPresent(event->{
+
+            event.setStatus(updateStatusCommand.getStatus());
+            repository().save(event);
+
+            StatusUpdated statusUpdated = new StatusUpdated(this);
+            statusUpdated.publishAfterCommit();
+        });
+
+        
     }
     //>>> Clean Arch / Port Method
 

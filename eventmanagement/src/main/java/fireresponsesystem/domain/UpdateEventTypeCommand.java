@@ -7,6 +7,6 @@ import lombok.Data;
 @Data
 public class UpdateEventTypeCommand {
 
-    private String eventId;
+    private Long eventId;
     private String eventType;
 }
