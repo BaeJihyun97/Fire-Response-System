@@ -16,7 +16,8 @@ public class PolicyHandler {
     public Consumer<Message<?>> discardFunction() {
         return message -> {
             // Ingore unnecessary message
-            System.out.println("Discarded message: " + message);
+            System.out.println("Discarded message");
+            System.out.println("Discarded message: " + message.getPayload());
         };
     }
 
@@ -54,6 +55,7 @@ public class PolicyHandler {
 
     @Bean
     public Consumer<Message<VideoSaved>> wheneverVideoSaved_VideoIdUpdate() {
+        System.out.println("wheneverVideoSaved_VideoIdUpdate");
         return event -> {
             VideoSaved videoSaved = event.getPayload();
             Report.videoIdUpdate(videoSaved);

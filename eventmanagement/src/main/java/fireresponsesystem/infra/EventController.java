@@ -32,7 +32,7 @@ public class EventController {
         HttpServletResponse response
     ) throws Exception {
         System.out.println("##### /event/updateEventType  called #####");
-        Optional<Event> optionalEvent = eventRepository.findById(id);
+        Optional<Event> optionalEvent = eventRepository.findByEventId(Long.parseLong(id));
 
         optionalEvent.orElseThrow(() -> new Exception("No Entity Found"));
         Event event = optionalEvent.get();
@@ -54,7 +54,7 @@ public class EventController {
         HttpServletResponse response
     ) throws Exception {
         System.out.println("##### /event/updateStatus  called #####");
-        Optional<Event> optionalEvent = eventRepository.findById(id);
+        Optional<Event> optionalEvent = eventRepository.findByEventId(Long.parseLong(id));
 
         optionalEvent.orElseThrow(() -> new Exception("No Entity Found"));
         Event event = optionalEvent.get();

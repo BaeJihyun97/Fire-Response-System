@@ -148,6 +148,7 @@ public class Report {
     // POLICY'영상ID업데이트' after EVENT'영상저장됨'
     public static void videoIdUpdate(VideoSaved videoSaved) {
         //implement business logic here:
+        System.out.println("videoIdUpdate: " + videoSaved.getVideoId());
         repository().findById(videoSaved.getReportId()).ifPresent(report->{
             
             report.videoId = videoSaved.getVideoId(); // do something

@@ -9,11 +9,11 @@ import lombok.*;
 @ToString
 public class VideoAnalyzed extends AbstractEvent {
 
-    private String videoId;
-    private String reportId;
-    private String originalVideoUri;
-    private String blurredVideoUri;
+    private Long videoAnalysisId;
     private Boolean fireDetected;
-    private Object tags;
     private String summary;
+    private String status; // completed, failed
+    private List<String> frameUris; 
+    private Long reportId;
+    private Long eventId;
 }

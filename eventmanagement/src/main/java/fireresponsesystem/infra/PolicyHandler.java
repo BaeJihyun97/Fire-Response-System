@@ -24,7 +24,7 @@ public class PolicyHandler {
     public Consumer<Message<ReportReceived>> wheneverReportReceived_CreateEvent() {
         return event -> {
             ReportReceived reportReceived = event.getPayload();
-            Event.createEvent(reportReceived);
+            Event.createAssignEvent(reportReceived);
         };
     }
 
@@ -32,7 +32,7 @@ public class PolicyHandler {
     public Consumer<Message<ReportReceived>> wheneverReportReceived_AssignToEvent() {
         return event -> {
             ReportReceived reportReceived = event.getPayload();
-            Event.assignToEvent(reportReceived);
+            Event.createAssignEvent(reportReceived);
         };
     }
 

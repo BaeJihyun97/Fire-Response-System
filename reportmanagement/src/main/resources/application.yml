@@ -18,7 +18,7 @@ spring:
         implicit_naming_strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
   cloud:
     function:
-      routing-expression: "headers['type']=='VideoAnalysisFailed' ? 'wheneverVideoAnalysisFailed_UpdateReport' : headers['type']=='IdentifiedAsNonFireEvent' ? 'wheneverIdentifiedAsNonFireEvent_UpdateReport' : headers['type']=='EventCreated' ? 'wheneverEventCreated_EventIdUpdate' : headers['type']=='AssignedToEvent' ? 'wheneverAssignedToEvent_EventIdUpdate' : 'discardFunction'"
+      routing-expression: "headers['type']=='VideoAnalysisFailed' ? 'wheneverVideoAnalysisFailed_UpdateReport' : headers['type']=='IdentifiedAsNonFireEvent' ? 'wheneverIdentifiedAsNonFireEvent_UpdateReport' : headers['type']=='EventCreated' ? 'wheneverEventCreated_EventIdUpdate' : headers['type']=='AssignedToEvent' ? 'wheneverAssignedToEvent_EventIdUpdate' : new String(headers['type'])=='VideoSaved' ? 'wheneverVideoSaved_VideoIdUpdate' : 'discardFunction'"
     stream:
       kafka:
         binder:

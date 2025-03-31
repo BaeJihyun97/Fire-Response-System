@@ -68,4 +68,7 @@ spring:
             destination: fireresponsesystem
             contentType: application/json
             
-
+---
+spring:
+  config:
+    import: optional:classpath:application-secret.yml

@@ -22,11 +22,25 @@ public class AbstractEvent {
     public AbstractEvent(Object aggregate) {
         this();
         BeanUtils.copyProperties(aggregate, this);
+
+        if(this.getEventType() == null) {
+            this.setEventType(this.getClass().getSimpleName());
+            this.timestamp = System.currentTimeMillis();
+            System.out.println("[init] AbstractEvent eventType: " + this.getEventType());
+        }
     }
 
     public AbstractEvent() {
         this.setEventType(this.getClass().getSimpleName());
         this.timestamp = System.currentTimeMillis();
+    }
+
+    public String getEventType() {
+        return eventType;
+    }
+
+    public void setEventType(String eventType) {
+        this.eventType = eventType;
     }
 
     public void publish() {
@@ -45,6 +59,8 @@ public class AbstractEvent {
                 .setHeader("type", getEventType())
                 .build()
         );
+
+        System.out.println("[POLICY] publish: " + getEventType());
     }
 
     public void publishAfterCommit() {
