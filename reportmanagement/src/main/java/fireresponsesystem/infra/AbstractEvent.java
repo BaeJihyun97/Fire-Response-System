@@ -42,9 +42,11 @@ public class AbstractEvent {
                     MessageHeaders.CONTENT_TYPE,
                     MimeTypeUtils.APPLICATION_JSON
                 )
-                .setHeader("type", getEventType())
+                .setHeader("type", this.getEventType())
                 .build()
         );
+
+        System.out.println("##### publish #####" + this.getEventType());
     }
 
     public void publishAfterCommit() {

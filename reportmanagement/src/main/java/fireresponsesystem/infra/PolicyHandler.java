@@ -51,5 +51,13 @@ public class PolicyHandler {
             Report.eventIdUpdate(assignedToEvent);
         };
     }
+
+    @Bean
+    public Consumer<Message<VideoSaved>> wheneverVideoSaved_VideoIdUpdate() {
+        return event -> {
+            VideoSaved videoSaved = event.getPayload();
+            Report.videoIdUpdate(videoSaved);
+        };
+    }
 }
 //>>> Clean Arch / Inbound Adaptor

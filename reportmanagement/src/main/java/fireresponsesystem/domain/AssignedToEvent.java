@@ -9,7 +9,8 @@ import lombok.*;
 @ToString
 public class AssignedToEvent extends AbstractEvent {
 
-    private String eventId;
+    private Long eventId;
+    private Long reportId;
     private Float longitude;
     private Float latitude;
     private String status;

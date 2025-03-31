@@ -7,14 +7,10 @@ import lombok.*;
 
 @Data
 @ToString
-public class VideoAnalysisFailed extends AbstractEvent {
+public class VideoSaved extends AbstractEvent {
 
     private Long videoId;
     private Long reportId;
     private String originalVideoUri;
-    private String blurredVideoUri;
-    private Boolean fireDetected;
-    private Object tags;
-    private String summary;
-    private Object frames;
+    private String encodedVideoUri;
 }

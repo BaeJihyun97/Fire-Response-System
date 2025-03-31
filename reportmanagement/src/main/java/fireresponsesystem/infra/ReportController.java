@@ -19,5 +19,21 @@ public class ReportController {
 
     @Autowired
     ReportRepository reportRepository;
+
+    @RequestMapping(
+        value = "reports//receivereport",
+        method = RequestMethod.POST,
+        produces = "application/json;charset=UTF-8"
+    )
+    public Report receiveReport(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        @RequestBody ReceiveReportCommand receiveReportCommand
+    ) throws Exception {
+        System.out.println("##### /report/receiveReport  called #####");
+        Report report = new Report();
+        report.receiveReport(receiveReportCommand);
+        return report;
+    }
 }
 //>>> Clean Arch / Inbound Adaptor

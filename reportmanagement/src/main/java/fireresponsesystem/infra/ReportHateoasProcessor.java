@@ -12,6 +12,12 @@ public class ReportHateoasProcessor
 
     @Override
     public EntityModel<Report> process(EntityModel<Report> model) {
+        model.add(
+            Link
+                .of(model.getRequiredLink("self").getHref() + "//receivereport")
+                .withRel("/receivereport")
+        );
+
         return model;
     }
 }

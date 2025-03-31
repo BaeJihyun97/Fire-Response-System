@@ -7,8 +7,8 @@ import lombok.Data;
 @Data
 public class ReceiveReportCommand {
 
-    private String reportId;
-    private Address location;
-    private File video;
-    private Comment description;
+    private Long userId;
+    private Float longitude;
+    private Float latitude;
+    private String description;
 }

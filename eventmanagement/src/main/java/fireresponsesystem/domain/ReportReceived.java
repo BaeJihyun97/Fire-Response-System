@@ -9,11 +9,11 @@ import lombok.*;
 @ToString
 public class ReportReceived extends AbstractEvent {
 
-    private String reportId;
-    private String userId;
+    private Long reportId;
+    private Long userId;
     private Float longitude;
     private Float latitude;
-    private String videoUri;
+    private Long videoId;
     private String description;
     private Date uploadedAt;
     private String status;

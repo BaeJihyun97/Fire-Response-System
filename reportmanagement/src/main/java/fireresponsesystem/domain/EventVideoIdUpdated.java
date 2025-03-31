@@ -9,7 +9,7 @@ import lombok.*;
 //<<< DDD / Domain Event
 @Data
 @ToString
-public class EventIdUpdated extends AbstractEvent {
+public class EventVideoIdUpdated extends AbstractEvent {
 
     private String reportId;
     private String eventId;
@@ -21,11 +21,11 @@ public class EventIdUpdated extends AbstractEvent {
     private Date uploadedAt;
     private String status;
 
-    public EventIdUpdated(Report aggregate) {
+    public EventVideoIdUpdated(Report aggregate) {
         super(aggregate);
     }
 
-    public EventIdUpdated() {
+    public EventVideoIdUpdated() {
         super();
     }
 }

@@ -22,9 +22,9 @@ public class Event {
 
     private Float latitude;
 
-    private String status;
+    private String status; // pending, resolved
 
-    private String eventType;
+    private String eventType; // fire, nonFire
 
     private Date createdAt;
 
@@ -32,11 +32,11 @@ public class Event {
 
     @PostPersist
     public void onPostPersist() {
-        EventCreated eventCreated = new EventCreated(this);
-        eventCreated.publishAfterCommit();
+        // EventCreated eventCreated = new EventCreated(this);
+        // eventCreated.publishAfterCommit();
 
-        AssignedToEvent assignedToEvent = new AssignedToEvent(this);
-        assignedToEvent.publishAfterCommit();
+        // AssignedToEvent assignedToEvent = new AssignedToEvent(this);
+        // assignedToEvent.publishAfterCommit();
     }
 
     @PreUpdate
@@ -49,14 +49,36 @@ public class Event {
         return eventRepository;
     }
 
+    // 두 지점 간의 거리 계산 (Haversine 공식 사용)
+    private static double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+        final int R = 6371; // 지구의 반지름 (킬로미터)
+        double latDistance = Math.toRadians(lat2 - lat1);
+        double lonDistance = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c; // 결과 거리 (킬로미터)
+    }
+
+    //<<< Clean Arch / Port Method
+    // POLICY'이벤트생성' after EVENT'신고받음'
+    public static void createEvent(ReportReceived reportReceived) {
+        //implement business logic here:
+        repository().findById(reportReceived.get???()).ifPresent(event->{
+            
+            event // do something
+            repository().save(event);
+
+            EventCreated eventCreated = new EventCreated(event);
+            eventCreated.publishAfterCommit();
+
+        });
+    }
+
     //<<< Clean Arch / Port Method
     public void updateEventType(UpdateEventTypeCommand updateEventTypeCommand) {
         //implement business logic here:
-
-        IdentifiedAsFireEvent identifiedAsFireEvent = new IdentifiedAsFireEvent(
-            this
-        );
-        identifiedAsFireEvent.publishAfterCommit();
 
         IdentifiedAsFireEvent identifiedAsFireEvent = new IdentifiedAsFireEvent(
             this
@@ -80,32 +102,7 @@ public class Event {
 
     //>>> Clean Arch / Port Method
 
-    //<<< Clean Arch / Port Method
-    public static void createEvent(ReportReceived reportReceived) {
-        //implement business logic here:
 
-        /** Example 1:  new item 
-        Event event = new Event();
-        repository().save(event);
-
-        EventCreated eventCreated = new EventCreated(event);
-        eventCreated.publishAfterCommit();
-        */
-
-        /** Example 2:  finding and process
-        
-        repository().findById(reportReceived.get???()).ifPresent(event->{
-            
-            event // do something
-            repository().save(event);
-
-            EventCreated eventCreated = new EventCreated(event);
-            eventCreated.publishAfterCommit();
-
-         });
-        */
-
-    }
 
     //>>> Clean Arch / Port Method
     //<<< Clean Arch / Port Method

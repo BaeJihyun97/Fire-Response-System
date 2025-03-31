@@ -9,5 +9,5 @@ import lombok.*;
 @ToString
 public class IdentifiedAsNonFireEvent extends AbstractEvent {
 
-    private Long id;
+    private Long reportId;
 }
