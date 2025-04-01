@@ -37,9 +37,28 @@
       </div>
     </div>
     
-    <!-- 이미지 -->
+    <!-- 미디어 (비디오 또는 이미지) -->
     <div class="relative">
-      <img :src="fire.imageUrl" alt="화재 이미지" class="w-full h-48 object-cover" />
+      <!-- 비디오가 있으면 비디오 플레이어 표시 -->
+      <div v-if="fire.videoUrl" class="w-full h-96 overflow-hidden">
+        <VideoPlayer 
+          :videoUrl="fire.videoUrl" 
+          :posterUrl="fire.imageUrl"
+          :showControls="false"
+          :muted="true"
+          @click="viewDetail"
+          class="w-full h-full object-contain"
+        />
+      </div>
+      
+      <!-- 비디오가 없으면 이미지 표시 -->
+      <img 
+        v-else 
+        :src="fire.imageUrl" 
+        alt="화재 이미지" 
+        class="w-full h-96 object-cover"
+        @click="viewDetail"
+      />
       
       <!-- 위험도 표시 - 위험도에 따라 색상 차별화 -->
       <div 
@@ -48,6 +67,14 @@
       >
         <AlertTriangle class="h-3 w-3 mr-1" />
         위험도: {{ fire.riskLevel }}
+      </div>
+      
+      <!-- 비디오 표시 아이콘 -->
+      <div 
+        v-if="fire.videoUrl" 
+        class="absolute bottom-3 left-3 bg-black bg-opacity-60 rounded-full p-1.5"
+      >
+        <Video class="h-4 w-4 text-white" />
       </div>
     </div>
     
@@ -58,7 +85,7 @@
       <!-- 액션 버튼 -->
       <div class="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-gray-100">
         <button 
-          @click="confirmFire" 
+          @click.stop="confirmFire" 
           class="flex items-center justify-center text-sm font-medium py-1"
           :class="isConfirmed ? 'text-red-600' : 'text-gray-600'"
         >
@@ -66,12 +93,12 @@
           <span>위험해요 {{ fire.confirms }}</span>
         </button>
         
-        <button @click="openComments" class="flex items-center justify-center text-gray-600 text-sm font-medium py-1">
+        <button @click.stop="openComments" class="flex items-center justify-center text-gray-600 text-sm font-medium py-1">
           <MessageSquare class="h-5 w-5 mr-1.5" />
           <span>댓글 {{ fire.comments }}</span>
         </button>
         
-        <button @click="shareReport" class="flex items-center justify-center text-gray-600 text-sm font-medium py-1">
+        <button @click.stop="shareReport" class="flex items-center justify-center text-gray-600 text-sm font-medium py-1">
           <Share2 class="h-5 w-5 mr-1.5" />
           <span>공유</span>
         </button>
@@ -96,9 +123,11 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { MapPin, AlertTriangle, MessageSquare, Share2, Shield } from 'lucide-vue-next';
+import { MapPin, AlertTriangle, MessageSquare, Share2, Shield, Video } from 'lucide-vue-next';
+import { useRouter } from 'vue-router';
 import CommentSection from './CommentSection.vue';
 import MapView from '../views/MapView.vue';
+import VideoPlayer from './VideoPlayer.vue';
 import { reverseGeocode } from '../services/geocodingService';
 
 const props = defineProps({
@@ -114,6 +143,7 @@ const props = defineProps({
       time: '',
       description: '',
       imageUrl: '',
+      videoUrl: null, // 비디오 URL 추가
       riskLevel: '낮음',
       distance: '',
       confirms: 0,
@@ -122,6 +152,8 @@ const props = defineProps({
     })
   }
 });
+
+const router = useRouter();
 
 // 필요한 상태 변수들
 const showComments = ref(false);
@@ -186,9 +218,23 @@ onMounted(async () => {
   }
 });
 
+// 상세 보기로 이동
+const viewDetail = (event) => {
+  // 비디오 플레이어 내부 클릭은 무시 (비디오 재생/일시정지 기능을 위해)
+  if (event && event.target && event.target.tagName === 'VIDEO') {
+    return;
+  }
+  
+  if (props.fire.id) {
+    router.push(`/report/${props.fire.id}`);
+  }
+};
+
 // 댓글 토글
 const openComments = () => {
+  console.log('댓글 토글 전:', showComments.value);
   showComments.value = !showComments.value;
+  console.log('댓글 토글 후:', showComments.value);
 };
 
 // 위험해요 버튼 클릭
@@ -239,3 +285,4 @@ const showMap = () => {
   }
 };
 </script>
+

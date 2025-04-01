@@ -12,6 +12,16 @@ import FireReportDetail from '../views/admin/FireReportDetail.vue'; // 관리자
 
 const routes = [
   {
+    path: "/login",
+    name: "Login",
+    component: () => import("../views/LoginPage.vue"),
+  },
+  {
+    path: "/register",
+    name: "Register",
+    component: () => import("../views/RegisterPage.vue"),
+  },
+  {
     path: '/',
     name: 'Home',
     component: HomePage

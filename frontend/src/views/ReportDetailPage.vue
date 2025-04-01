@@ -1,242 +1,369 @@
 <template>
-  <div class="min-h-screen bg-gray-100 pb-20">
-    <!-- 상단 네비게이션 바 -->
-    <div class="bg-white border-b border-gray-200 py-2 shadow-sm">
-      <div class="container mx-auto max-w-4xl px-4">
-        <div class="flex justify-between items-center">
-          <router-link to="/" class="flex items-center">
-            <Flame class="h-6 w-6 text-primary-600 mr-2" />
-            <span class="font-bold text-xl text-gray-900">화재알리미</span>
-          </router-link>
-          
-          <div class="flex items-center space-x-4">
-            <router-link to="/report" class="flex items-center text-gray-700 hover:text-primary-600">
-              <Camera class="h-5 w-5 mr-1" />
-              <span class="text-sm font-medium">제보하기</span>
-            </router-link>
-            
-            <router-link to="/notifications" class="flex items-center text-gray-700 hover:text-primary-600 relative">
-              <Bell class="h-5 w-5 mr-1" />
-              <span class="text-sm font-medium">알림</span>
-              <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                2
-              </span>
-            </router-link>
-          </div>
-        </div>
+  <div class="min-h-screen bg-gray-50">
+    <!-- 헤더 -->
+    <AppHeader title="화재 제보 상세" :showBackButton="true" />
+    
+    <!-- 메인 컨텐츠 -->
+    <div class="container mx-auto px-4 py-6 max-w-lg">
+      <!-- 로딩 상태 -->
+      <div v-if="isLoading" class="flex justify-center items-center py-12">
+        <div class="w-12 h-12 border-4 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
       </div>
-    </div>
-
-    <div class="container mx-auto px-4 py-6 max-w-4xl">
-      <div class="mb-6">
-        <router-link to="/" class="flex items-center text-gray-600 hover:text-gray-900">
-          <ChevronLeft class="h-5 w-5 mr-1" />
-          <span>뒤로 가기</span>
-        </router-link>
+      
+      <!-- 에러 상태 -->
+      <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+        <AlertTriangle class="h-8 w-8 text-red-500 mx-auto mb-2" />
+        <p class="text-red-700 font-medium">{{ error }}</p>
+        <button 
+          @click="loadReportData" 
+          class="mt-3 px-4 py-2 bg-primary-600 text-white rounded-md text-sm font-medium hover:bg-primary-700"
+        >
+          다시 시도
+        </button>
       </div>
-
-      <div class="bg-white rounded-lg shadow-md overflow-hidden">
-        <div class="p-4 border-b border-gray-200">
-          <div class="flex justify-between items-center">
-            <h1 class="text-xl font-bold text-gray-900">화재 제보 #{{ id }}</h1>
-            <div class="flex items-center">
-              <span 
-                class="px-2 py-0.5 rounded-full text-xs"
-                :class="{
-                  'bg-red-100 text-red-800': report.riskLevel === '심각',
-                  'bg-orange-100 text-orange-800': report.riskLevel === '높음',
-                  'bg-yellow-100 text-yellow-800': report.riskLevel === '중간',
-                  'bg-blue-100 text-blue-800': !report.riskLevel
-                }"
-              >
-                {{ report.riskLevel || '확인 중' }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="p-4">
-          <div class="flex items-start mb-6">
-            <div class="h-12 w-12 rounded-full bg-gray-200 overflow-hidden mr-3">
-              <img :src="report.userAvatar" :alt="report.username" class="h-full w-full object-cover" />
-            </div>
+      
+      <!-- 제보 상세 정보 -->
+      <div v-else-if="report" class="space-y-6">
+        <!-- 제보자 정보 -->
+        <div class="bg-white rounded-lg shadow-sm p-4">
+          <div class="flex items-center">
+            <img :src="report.userAvatar" alt="프로필" class="w-12 h-12 rounded-full mr-4" />
             <div>
               <div class="flex items-center">
-                <span class="font-medium">{{ report.username }}</span>
-                <span 
-                  v-if="report.verified" 
-                  class="ml-2 px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800 border border-green-200 flex items-center"
-                >
-                  <CheckCircle class="h-3 w-3 mr-1" />
-                  인증된 사용자
+                <h3 class="font-medium text-gray-900">{{ report.username }}</h3>
+                <span v-if="report.verified" class="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-800 border border-blue-200 rounded-full flex items-center">
+                  <Shield class="h-3 w-3 mr-1" />
+                  확인됨
                 </span>
               </div>
-              <div class="flex items-center text-sm text-gray-500 mt-1">
-                <MapPin class="h-3 w-3 mr-1" />
-                {{ report.location }}
-              </div>
-              <div class="flex items-center text-xs text-gray-400 mt-1">
+              <div class="flex items-center text-xs text-gray-500 mt-1">
                 <Clock class="h-3 w-3 mr-1" />
-                {{ report.time }}
+                <span>{{ report.time }}</span>
               </div>
             </div>
           </div>
-
-          <!-- 영상 플레이어 추가 -->
-          <div v-if="report.videoUrl" class="mb-6">
-            <h2 class="text-lg font-medium text-gray-900 mb-2">화재 영상</h2>
+        </div>
+        
+        <!-- 비디오 플레이어 또는 이미지 -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div v-if="report.videoUrl" class="w-full aspect-video">
             <VideoPlayer 
-              :video-url="report.videoUrl" 
-              :thumbnail-url="report.thumbnailUrl"
+              :videoUrl="report.videoUrl" 
+              :posterUrl="report.imageUrl"
+              @error="handleVideoError"
             />
           </div>
-
-          <!-- 제보 사진 -->
-          <div v-if="report.images && report.images.length > 0" class="mb-6">
-            <h2 class="text-lg font-medium text-gray-900 mb-2">제보 사진</h2>
-            <div class="grid grid-cols-2 gap-2">
-              <div v-for="(image, index) in report.images" :key="index" class="rounded-lg overflow-hidden">
-                <img :src="image" alt="제보 사진" class="w-full h-48 object-cover" />
-              </div>
-            </div>
+          <img 
+            v-else 
+            :src="report.imageUrl" 
+            alt="화재 이미지" 
+            class="w-full object-cover"
+          />
+        </div>
+        
+        <!-- 위치 정보 -->
+        <div class="bg-white rounded-lg shadow-sm p-4">
+          <h3 class="font-medium text-gray-900 mb-2 flex items-center">
+            <MapPin class="h-5 w-5 mr-2 text-primary-600" />
+            위치 정보
+          </h3>
+          <p class="text-gray-700">{{ report.location || displayLocation }}</p>
+          
+          <!-- 지도 미리보기 (클릭 시 전체 지도 보기) -->
+          <div class="mt-3 h-40 bg-gray-100 rounded-lg overflow-hidden relative">
+            <div id="mini-map" class="w-full h-full"></div>
+            <button 
+              @click="openMap" 
+              class="absolute bottom-2 right-2 bg-white rounded-lg shadow-md px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              지도 보기
+            </button>
           </div>
-
-          <!-- 제보 내용 -->
-          <div class="mb-6">
-            <h2 class="text-lg font-medium text-gray-900 mb-2">제보 내용</h2>
-            <p class="text-gray-700">
-              {{ report.description || '제보 내용이 없습니다.' }}
-            </p>
+        </div>
+        
+        <!-- 제보 내용 -->
+        <div class="bg-white rounded-lg shadow-sm p-4">
+          <h3 class="font-medium text-gray-900 mb-2 flex items-center">
+            <FileText class="h-5 w-5 mr-2 text-primary-600" />
+            제보 내용
+          </h3>
+          <p class="text-gray-700">{{ report.description }}</p>
+          
+          <!-- 위험도 표시 -->
+          <div class="mt-4 flex items-center">
+            <span class="text-sm text-gray-600 mr-2">위험도:</span>
+            <span 
+              class="px-3 py-1 rounded-full text-xs font-medium"
+              :class="riskLevelClass"
+            >
+              {{ report.riskLevel }}
+            </span>
           </div>
-
-          <!-- 위치 정보 -->
-          <div class="mb-6">
-            <h2 class="text-lg font-medium text-gray-900 mb-2">위치 정보</h2>
-            <div class="bg-gray-100 rounded-lg h-64 flex items-center justify-center">
-              <MapPin class="h-8 w-8 text-gray-400" />
-              <span class="ml-2 text-gray-500">지도 위치</span>
-            </div>
+        </div>
+        
+        <!-- 액션 버튼 -->
+        <div class="bg-white rounded-lg shadow-sm p-4">
+          <div class="grid grid-cols-3 gap-2">
+            <button 
+              @click="confirmFire" 
+              class="flex flex-col items-center justify-center text-sm font-medium py-2"
+              :class="isConfirmed ? 'text-red-600' : 'text-gray-600'"
+            >
+              <AlertTriangle :class="['h-6 w-6 mb-1', isConfirmed ? 'fill-red-100' : '']" />
+              <span>위험해요 {{ report.confirms }}</span>
+            </button>
+            
+            <button @click="openComments" class="flex flex-col items-center justify-center text-gray-600 text-sm font-medium py-2">
+              <MessageSquare class="h-6 w-6 mb-1" />
+              <span>댓글 {{ report.comments }}</span>
+            </button>
+            
+            <button @click="shareReport" class="flex flex-col items-center justify-center text-gray-600 text-sm font-medium py-2">
+              <Share2 class="h-6 w-6 mb-1" />
+              <span>공유</span>
+            </button>
           </div>
-
-          <!-- 소방서 확인 정보 -->
-          <div class="mb-6">
-            <h2 class="text-lg font-medium text-gray-900 mb-2">소방서 확인 정보</h2>
-            <div v-if="report.confirmedByFireDept" class="bg-green-50 border border-green-200 rounded-lg p-4">
-              <div class="flex items-center">
-                <CheckCircle class="h-5 w-5 text-green-600 mr-2" />
-                <div>
-                  <p class="text-sm font-medium text-green-800">소방서에서 확인한 화재입니다</p>
-                  <p class="text-xs text-green-700">확인 시간: {{ report.confirmedAt || '정보 없음' }}</p>
-                </div>
-              </div>
-            </div>
-            <div v-else class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <div class="flex items-center">
-                <AlertTriangle class="h-5 w-5 text-yellow-600 mr-2" />
-                <div>
-                  <p class="text-sm font-medium text-yellow-800">소방서 확인 대기 중</p>
-                  <p class="text-xs text-yellow-700">소방서에서 아직 확인하지 않은 제보입니다</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 사용자 반응 -->
-          <div class="border-t border-gray-200 pt-4">
-            <div class="flex justify-between items-center">
-              <div class="flex items-center">
-                <button class="flex items-center text-gray-600 hover:text-red-600 mr-4">
-                  <AlertTriangle class="h-5 w-5 mr-1" />
-                  <span>위험해요 ({{ report.dangers || 0 }})</span>
-                </button>
-                <button class="flex items-center text-gray-600 hover:text-blue-600">
-                  <Share2 class="h-5 w-5 mr-1" />
-                  <span>공유하기</span>
-                </button>
-              </div>
-              <button class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700">
-                119 신고하기
-              </button>
-            </div>
-          </div>
+        </div>
+        
+        <!-- 댓글 섹션 (토글) -->
+        <div v-if="showComments" class="bg-white rounded-lg shadow-sm p-4">
+          <h3 class="font-medium text-gray-900 mb-3">댓글</h3>
+          <comment-section :post-id="report.id" />
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script>
-import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+<script setup>
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { 
   AlertTriangle, 
-  Bell, 
-  Camera, 
-  CheckCircle, 
-  ChevronLeft, 
+  Shield, 
   Clock, 
-  Flame, 
   MapPin, 
+  FileText, 
+  MessageSquare, 
   Share2 
 } from 'lucide-vue-next';
+import AppHeader from '../components/AppHeader.vue';
 import VideoPlayer from '../components/VideoPlayer.vue';
+import CommentSection from '../components/CommentSection.vue';
+import { reverseGeocode } from '../services/geocodingService';
 
-export default {
-  name: 'ReportDetailPage',
-  components: {
-    AlertTriangle,
-    Bell,
-    Camera,
-    CheckCircle,
-    ChevronLeft,
-    Clock,
-    Flame,
-    MapPin,
-    Share2,
-    VideoPlayer
-  },
-  props: {
-    id: {
-      type: String,
-      required: false
-    }
-  },
-  setup(props) {
-    const route = useRoute();
-    const reportId = props.id || route.params.id;
+const route = useRoute();
+const router = useRouter();
+const reportId = computed(() => route.params.id);
+
+// 상태 변수
+const isLoading = ref(true);
+const error = ref(null);
+const report = ref(null);
+const showComments = ref(false);
+const isConfirmed = ref(false);
+const formattedAddress = ref(null);
+const map = ref(null);
+const marker = ref(null);
+
+// 위험도에 따른 클래스 계산
+const riskLevelClass = computed(() => {
+  if (!report.value) return '';
+  
+  switch (report.value.riskLevel) {
+    case '높음':
+      return 'bg-red-100 text-red-800 border border-red-200';
+    case '중간':
+      return 'bg-orange-100 text-orange-800 border border-orange-200';
+    case '낮음':
+      return 'bg-green-100 text-green-800 border border-green-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border border-gray-200';
+  }
+});
+
+// 표시할 위치 정보 계산
+const displayLocation = computed(() => {
+  if (formattedAddress.value && formattedAddress.value.fullAddress) {
+    return formattedAddress.value.fullAddress;
+  }
+  
+  // 역지오코딩 결과가 없으면 좌표 표시
+  if (report.value?.coordinates) {
+    return `위도: ${report.value.coordinates.lat.toFixed(5)}, 경도: ${report.value.coordinates.lng.toFixed(5)}`;
+  }
+  
+  return '위치 정보 없음';
+});
+
+// 제보 데이터 로드
+const loadReportData = async () => {
+  isLoading.value = true;
+  error.value = null;
+  
+  try {
+    // 실제로는 API 호출을 통해 데이터를 가져옵니다
+    // const response = await fetch(`/api/fire-reports/${reportId.value}`);
+    // const data = await response.json();
     
-    // 실제로는 API에서 데이터를 가져와야 함
-    const report = ref({
-      id: reportId,
-      username: "시민제보자",
-      userAvatar: "https://placehold.co/40x40",
-      location: "강남역, 서울",
-      time: "10분 전",
-      riskLevel: "높음",
+    // 테스트용 데이터
+    await new Promise(resolve => setTimeout(resolve, 1000)); // 로딩 시뮬레이션
+    
+    // 샘플 데이터 (실제로는 API 응답으로 대체)
+    report.value = {
+      id: reportId.value,
+      username: '소방지킴이',
+      userAvatar: 'https://placehold.co/40x40',
       verified: true,
-      confirmedByFireDept: true,
-      confirmedAt: "2023-05-15 14:30:00",
-      description: "강남역 인근 건물에서 연기가 발생하고 있습니다. 2층 창문에서 불꽃이 보이며 사람들이 대피하고 있습니다.",
-      videoUrl: "https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4", // 샘플 비디오 URL
-      thumbnailUrl: "https://placehold.co/600x400",
-      dangers: 42,
-      images: [
-        "https://placehold.co/600x400?text=Fire+Image+1",
-        "https://placehold.co/600x400?text=Fire+Image+2",
-        "https://placehold.co/600x400?text=Fire+Image+3",
-        "https://placehold.co/600x400?text=Fire+Image+4"
-      ]
-    });
-
-    onMounted(() => {
-      // 실제로는 여기서 API 호출을 통해 데이터를 가져옴
-      console.log(`화재 제보 ID: ${reportId} 상세 정보 로드`);
-    });
-
-    return {
-      id: reportId,
-      report
+      time: '5분 전',
+      videoUrl: 'https://team05sa.blob.core.windows.net/videos/38/38.mp4', // 샘플 비디오 URL
+      imageUrl: 'https://placehold.co/600x400',
+      location: '',
+      coordinates: { lat: 37.498095, lng: 127.027610 }, // 강남역 좌표
+      description: '상업 건물 3층에서 화재 발생. 연기가 심하게 나고 있습니다. 주변 건물로 확산 우려가 있어 긴급 대응이 필요합니다.',
+      riskLevel: '높음',
+      confirms: 128,
+      comments: 24
     };
+    
+    // 좌표로부터 주소 변환
+    if (report.value.coordinates) {
+      try {
+        const address = await reverseGeocode(
+          report.value.coordinates.lat, 
+          report.value.coordinates.lng
+        );
+        formattedAddress.value = address;
+      } catch (err) {
+        console.error('주소 변환 실패:', err);
+      }
+    }
+    
+    // 지도 초기화
+    setTimeout(() => {
+      initMap();
+    }, 500);
+    
+  } catch (err) {
+    console.error('제보 데이터 로드 실패:', err);
+    error.value = '제보 정보를 불러오는데 실패했습니다.';
+  } finally {
+    isLoading.value = false;
   }
 };
+
+// 지도 초기화
+const initMap = () => {
+  if (!report.value?.coordinates || !window.naver || !window.naver.maps) return;
+  
+  try {
+    const position = new window.naver.maps.LatLng(
+      report.value.coordinates.lat,
+      report.value.coordinates.lng
+    );
+    
+    // 지도 옵션
+    const mapOptions = {
+      center: position,
+      zoom: 15,
+      zoomControl: false,
+      scrollWheel: false,
+      draggable: false
+    };
+    
+    // 지도 생성
+    map.value = new window.naver.maps.Map('mini-map', mapOptions);
+    
+    // 마커 생성
+    marker.value = new window.naver.maps.Marker({
+      position: position,
+      map: map.value,
+      icon: {
+        content: `
+          <div style="
+            width: 24px;
+            height: 24px;
+            background-color: #ff3b30;
+            border: 2px solid white;
+            border-radius: 50%;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            transform: translate(-50%, -50%);
+          "></div>
+        `,
+        anchor: new window.naver.maps.Point(12, 12)
+      }
+    });
+  } catch (err) {
+    console.error('지도 초기화 실패:', err);
+  }
+};
+
+// 비디오 에러 처리
+const handleVideoError = (err) => {
+  console.error('비디오 로드 에러:', err);
+  // 필요한 경우 추가 처리
+};
+
+// 지도 보기
+const openMap = () => {
+  if (!report.value?.coordinates) return;
+  
+  // 지도 페이지로 이동
+  router.push({
+    name: 'Map',
+    query: {
+      lat: report.value.coordinates.lat,
+      lng: report.value.coordinates.lng,
+      title: `화재 제보: ${report.value.location || displayLocation.value}`
+    }
+  });
+};
+
+// 댓글 토글
+const openComments = () => {
+  showComments.value = !showComments.value;
+};
+
+// 위험해요 버튼 클릭
+const confirmFire = () => {
+  isConfirmed.value = !isConfirmed.value;
+  // 실제로는 API 호출을 통해 서버에 업데이트
+  if (isConfirmed.value) {
+    report.value.confirms++;
+  } else {
+    report.value.confirms--;
+  }
+};
+
+// 공유 기능
+const shareReport = () => {
+  // 공유 기능 구현
+  if (navigator.share) {
+    navigator.share({
+      title: `화재 제보: ${report.value.location || displayLocation.value}`,
+      text: report.value.description,
+      url: window.location.href
+    }).catch(err => {
+      console.error('공유 실패:', err);
+    });
+  } else {
+    alert('공유 기능을 지원하지 않는 브라우저입니다.');
+  }
+};
+
+// 컴포넌트 마운트 시 데이터 로드
+onMounted(() => {
+  loadReportData();
+});
+
+// 컴포넌트 언마운트 시 정리
+onBeforeUnmount(() => {
+  if (map.value) {
+    map.value = null;
+  }
+  if (marker.value) {
+    marker.value = null;
+  }
+});
 </script>
+

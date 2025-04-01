@@ -189,11 +189,33 @@
                       </div>
                     </div>
                     
-                    <!-- 비디오 링크 추가 -->
-                    <div v-if="report.videoUrl" class="mt-2 pt-2 border-t border-gray-100">
+                    <!-- 비디오 미리보기 추가 -->
+                    <div v-if="report.videoUrl" class="mt-3 relative">
+                      <div class="h-32 bg-gray-100 rounded-lg overflow-hidden">
+                        <VideoPlayer 
+                          :videoUrl="report.videoUrl"
+                          :posterUrl="report.imageUrl"
+                          :showControls="false"
+                          :muted="true"
+                          @click="viewReportDetail(report.id)"
+                        />
+                      </div>
+                      
+                      <div class="absolute bottom-2 right-2">
+                        <button 
+                          @click="viewReportDetail(report.id)" 
+                          class="bg-white rounded-lg shadow-md px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                        >
+                          상세 보기
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <!-- 비디오 링크 (비디오가 없는 경우) -->
+                    <div v-else-if="report.imageUrl" class="mt-2 pt-2 border-t border-gray-100">
                       <router-link :to="`/admin/report/${report.id}`" class="flex items-center text-blue-600 hover:text-blue-800">
-                        <Video class="h-4 w-4 mr-1" />
-                        <span class="text-sm">화재 영상 보기</span>
+                        <Image class="h-4 w-4 mr-1" />
+                        <span class="text-sm">화재 이미지 보기</span>
                       </router-link>
                     </div>
                     
@@ -294,6 +316,28 @@
                         <router-link :to="`/admin/report/${report.id}`">
                           <button class="px-3 py-1 bg-blue-500 text-white rounded-md text-sm">보기</button>
                         </router-link>
+                      </div>
+                    </div>
+                    
+                    <!-- 비디오 미리보기 추가 -->
+                    <div v-if="report.videoUrl" class="mt-3 relative">
+                      <div class="h-32 bg-gray-100 rounded-lg overflow-hidden">
+                        <VideoPlayer 
+                          :videoUrl="report.videoUrl"
+                          :posterUrl="report.imageUrl"
+                          :showControls="false"
+                          :muted="true"
+                          @click="viewReportDetail(report.id)"
+                        />
+                      </div>
+                      
+                      <div class="absolute bottom-2 right-2">
+                        <button 
+                          @click="viewReportDetail(report.id)" 
+                          class="bg-white rounded-lg shadow-md px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                        >
+                          상세 보기
+                        </button>
                       </div>
                     </div>
                     
@@ -485,28 +529,28 @@
   
         <div>
           <!-- 위험 분석 지도 컴포넌트 -->
-    <div class="bg-white rounded-lg shadow overflow-hidden mb-6">
-      <div class="p-4 border-b border-gray-200">
-        <h2 class="text-lg font-medium text-gray-900">위험 분석 지도</h2>
-        <p class="text-sm text-gray-500">
-          화재 위험의 지리적 분포
-        </p>
-      </div>
-      <RiskAnalysisMap 
-        :fire-reports="activeReports"
-        :pending-reports="pendingReports"
-        :closed-reports="closedReports"
-        map-id="sidebar-map"
-      />
-      <div class="p-4 border-t border-gray-200">
-        <button 
-          @click="navigateToFullRiskMap" 
-          class="w-full border border-gray-300 rounded-md py-2 text-sm hover:bg-gray-50 transition-colors"
-        >
-          전체 위험 분석 지도 보기
-        </button>
-      </div>
-    </div>
+          <div class="bg-white rounded-lg shadow overflow-hidden mb-6">
+            <div class="p-4 border-b border-gray-200">
+              <h2 class="text-lg font-medium text-gray-900">위험 분석 지도</h2>
+              <p class="text-sm text-gray-500">
+                화재 위험의 지리적 분포
+              </p>
+            </div>
+            <RiskAnalysisMap 
+              :fire-reports="activeReports"
+              :pending-reports="pendingReports"
+              :closed-reports="closedReports"
+              map-id="sidebar-map"
+            />
+            <div class="p-4 border-t border-gray-200">
+              <button 
+                @click="navigateToFullRiskMap" 
+                class="w-full border border-gray-300 rounded-md py-2 text-sm hover:bg-gray-50 transition-colors"
+              >
+                전체 위험 분석 지도 보기
+              </button>
+            </div>
+          </div>
   
           <div class="bg-white rounded-lg shadow overflow-hidden">
             <div class="p-4 border-b border-gray-200">
@@ -618,7 +662,7 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { 
@@ -632,6 +676,7 @@ import {
   FileText, 
   Flame,
   Home,
+  Image,
   InfoIcon,
   Map,
   MapPin, 
@@ -645,380 +690,347 @@ import {
   XCircle
 } from 'lucide-vue-next';
 import RiskAnalysisMap from './admin/RiskAnalysisMap.vue';
+import VideoPlayer from '../components/VideoPlayer.vue';
 
-export default {
-  name: 'AdminPage',
-  components: {
-    AlertTriangle, 
-    Archive,
-    BarChart3, 
-    Bell, 
-    Camera,
-    CheckCircle,
-    Clock, 
-    FileText, 
-    Flame,
-    Home,
-    InfoIcon,
-    Map,
-    MapPin, 
-    Phone, 
-    RefreshCw,
-    Search,
-    Shield,
-    Trash2,
-    User,
-    Video,
-    XCircle,
-    RiskAnalysisMap
+const router = useRouter();
+const activeTab = ref('active');
+const showFullRiskMap = ref(false);
+
+// 확인된 화재 데이터
+const activeReports = ref([
+  {
+    id: "1",
+    username: "소방지킴이",
+    userAvatar: "https://placehold.co/40x40",
+    location: "강남역, 서울",
+    time: "5분 전",
+    riskLevel: "높음",
+    status: "진행 중",
+    verified: true,
+    confirmedByFireDept: true,
+    confirmedAt: new Date().toISOString(),
+    videoUrl: "https://team05sa.blob.core.windows.net/videos/38/38.mp4", // 샘플 비디오 URL 추가
+    imageUrl: "https://placehold.co/600x400"
   },
-  setup() {
-    const activeTab = ref('active');
-    const showFullRiskMap = ref(false);
+  {
+    id: "2",
+    username: "안전제일",
+    userAvatar: "https://placehold.co/40x40",
+    location: "여의도 공원, 서울",
+    time: "15분 전",
+    riskLevel: "중간",
+    status: "진행 중",
+    verified: true,
+    confirmedByFireDept: false,
+    videoUrl: null, // 비디오 없음
+    imageUrl: "https://placehold.co/600x400"
+  }
+]);
+
+// 검토 필요 제보 데이터
+const pendingReports = ref([
+  {
+    id: "3",
+    username: "시민제보자",
+    userAvatar: "https://placehold.co/40x40",
+    location: "홍대 앞, 서울",
+    time: "30분 전",
+    dangers: 67,
+    verified: false,
+    videoUrl: "https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4", // 샘플 비디오 URL 추가
+    imageUrl: "https://placehold.co/600x400"
+  },
+  {
+    id: "4",
+    username: "동네지킴이",
+    userAvatar: "https://placehold.co/40x40",
+    location: "강동구 천호동, 서울",
+    time: "1시간 전",
+    dangers: 92,
+    verified: false,
+    videoUrl: null,
+    imageUrl: "https://placehold.co/600x400"
+  }
+]);
+
+// 종결된 이벤트 데이터
+const closedReports = ref([
+  {
+    id: "5",
+    username: "안전지킴이",
+    userAvatar: "https://placehold.co/40x40",
+    location: "서초구 서초동, 서울",
+    time: "2시간 전",
+    closedTime: "30분 전",
+    riskLevel: "중간",
+    status: "종결",
+    verified: true,
+    confirmedByFireDept: true, // 소방관 확인 여부
+    confirmedAt: new Date(Date.now() - 3600000).toISOString(), // 소방관 확인 시간 (1시간 전)
+    closeReason: "화재 완전 진화 완료. 현장 안전 확보됨.",
+    videoUrl: "https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4",
+    imageUrl: "https://placehold.co/600x400"
+  },
+  {
+    id: "6",
+    username: "시민제보자",
+    userAvatar: "https://placehold.co/40x40",
+    location: "마포구 합정동, 서울",
+    time: "3시간 전",
+    closedTime: "1시간 전",
+    isDeleted: true,
+    closeReason: "현장 확인 결과 화재가 아닌 것으로 판명. 요리 과정에서 발생한 연기로 확인됨.",
+    videoUrl: null,
+    imageUrl: "https://placehold.co/600x400"
+  },
+  {
+    id: "7",
+    username: "동네지킴이",
+    userAvatar: "https://placehold.co/40x40",
+    location: "송파구 잠실동, 서울",
+    time: "어제",
+    closedTime: "어제",
+    riskLevel: "높음",
+    status: "종결",
+    verified: true,
+    confirmedByFireDept: false, // 소방관 확인 여부
+    closeReason: "화재 진화 완료. 인명 피해 없음. 재산 피해 조사 중.",
+    videoUrl: null,
+    imageUrl: "https://placehold.co/600x400"
+  }
+]);
+
+// 상태 변경 모달 관련 상태
+const showStatusModal = ref(false);
+const statusModalTitle = ref('');
+const statusChangeReason = ref('');
+const statusChangeNotification = ref('');
+const currentReport = ref(null);
+const changeType = ref(''); // 'status', 'delete', 'confirm', 'false', 'moreInfo', 'restore', 'firefighter'
+
+// 화재 상태 변경 처리
+const handleStatusChange = (report) => {
+  currentReport.value = report;
+  changeType.value = 'status';
+  statusModalTitle.value = '화재 상태 변경';
+  showStatusModal.value = true;
   
-    // 확인된 화재 데이터
-    const activeReports = ref([
-      {
-        id: "1",
-        username: "소방지킴이",
-        userAvatar: "https://placehold.co/40x40",
-        location: "강남역, 서울",
-        time: "5분 전",
-        riskLevel: "높음",
-        status: "진행 중",
-        verified: true,
-        confirmedByFireDept: true,
-        confirmedAt: new Date().toISOString(),
-        videoUrl: "https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4" // 샘플 비디오 URL 추가
-      },
-      {
-        id: "2",
-        username: "안전제일",
-        userAvatar: "https://placehold.co/40x40",
-        location: "여의도 공원, 서울",
-        time: "15분 전",
-        riskLevel: "중간",
-        status: "진행 중",
-        verified: true,
-        confirmedByFireDept: false,
-        videoUrl: null // 비디오 없음
-      }
-    ]);
-  
-    // 검토 필요 제보 데이터
-    const pendingReports = ref([
-      {
-        id: "3",
-        username: "시민제보자",
-        userAvatar: "https://placehold.co/40x40",
-        location: "홍대 앞, 서울",
-        time: "30분 전",
-        dangers: 67,
-        verified: false
-      },
-      {
-        id: "4",
-        username: "동네지킴이",
-        userAvatar: "https://placehold.co/40x40",
-        location: "강동구 천호동, 서울",
-        time: "1시간 전",
-        dangers: 92,
-        verified: false
-      }
-    ]);
-  
-    // 종결된 이벤트 데이터
-    const closedReports = ref([
-      {
-        id: "5",
-        username: "안전지킴이",
-        userAvatar: "https://placehold.co/40x40",
-        location: "서초구 서초동, 서울",
-        time: "2시간 전",
-        closedTime: "30분 전",
-        riskLevel: "중간",
-        status: "종결",
-        verified: true,
-        confirmedByFireDept: true, // 소방관 확인 여부
-        confirmedAt: new Date(Date.now() - 3600000).toISOString(), // 소방관 확인 시간 (1시간 전)
-        closeReason: "화재 완전 진화 완료. 현장 안전 확보됨."
-      },
-      {
-        id: "6",
-        username: "시민제보자",
-        userAvatar: "https://placehold.co/40x40",
-        location: "마포구 합정동, 서울",
-        time: "3시간 전",
-        closedTime: "1시간 전",
-        isDeleted: true,
-        closeReason: "현장 확인 결과 화재가 아닌 것으로 판명. 요리 과정에서 발생한 연기로 확인됨."
-      },
-      {
-        id: "7",
-        username: "동네지킴이",
-        userAvatar: "https://placehold.co/40x40",
-        location: "송파구 잠실동, 서울",
-        time: "어제",
-        closedTime: "어제",
-        riskLevel: "높음",
-        status: "종결",
-        verified: true,
-        confirmedByFireDept: false, // 소방관 확인 여부
-        closeReason: "화재 진화 완료. 인명 피해 없음. 재산 피해 조사 중."
-      }
-    ]);
-  
-    // 상태 변경 모달 관련 상태
-    const showStatusModal = ref(false);
-    const statusModalTitle = ref('');
-    const statusChangeReason = ref('');
-    const statusChangeNotification = ref('');
-    const currentReport = ref(null);
-    const changeType = ref(''); // 'status', 'delete', 'confirm', 'false', 'moreInfo', 'restore', 'firefighter'
-  
-    // setup() 함수 내에 추가
-    const router = useRouter();
-  
-    const navigateToFullRiskMap = () => {
-      router.push('/admin/full-risk-map');
-    };
-  
-    // 화재 상태 변경 처리
-    const handleStatusChange = (report) => {
-      currentReport.value = report;
-      changeType.value = 'status';
-      statusModalTitle.value = '화재 상태 변경';
-      showStatusModal.value = true;
-      
-      // 상태에 따른 기본 알림 메시지 설정
-      if (report.status === '종결') {
-        statusChangeNotification.value = `화재 #${report.id}가 종결 처리되었습니다.`;
-      } else {
-        statusChangeNotification.value = `화재 #${report.id}의 상태가 "${report.status}"(으)로 변경되었습니다.`;
-      }
-    };
-  
-    // 소방관 확인 토글
-    const toggleFirefighterConfirmation = (report) => {
-      if (report.confirmedByFireDept) {
-        // 이미 확인된 경우, 확인 취소 모달 표시
-        currentReport.value = report;
-        changeType.value = 'firefighter';
-        statusModalTitle.value = '소방관 확인 취소';
-        statusChangeReason.value = '';
-        statusChangeNotification.value = `화재 #${report.id}의 소방관 확인이 취소되었습니다.`;
-        showStatusModal.value = true;
-      } else {
-        // 확인되지 않은 경우, 확인 처리
-        report.confirmedByFireDept = true;
-        report.confirmedAt = new Date().toISOString();
-        
-        // 알림 메시지 표시 (실제로는 서버에 요청)
-        console.log(`소방관 확인: 화재 #${report.id}가 소방관에 의해 확인되었습니다.`);
-      }
-    };
-  
-    // 화재 이벤트 삭제 처리
-    const deleteFireEvent = (report) => {
-      currentReport.value = report;
-      changeType.value = 'delete';
-      statusModalTitle.value = '화재 이벤트 삭제';
-      showStatusModal.value = true;
-      statusChangeNotification.value = `화재 #${report.id}가 삭제되었습니다.`;
-    };
-  
-    // 제보를 화재로 확인
-    const confirmAsFireReport = (report) => {
-      currentReport.value = report;
-      changeType.value = 'confirm';
-      statusModalTitle.value = '화재 확인';
-      showStatusModal.value = true;
-      statusChangeNotification.value = `제보 #${report.id}가 화재로 확인되었습니다. 소방대가 출동 중입니다.`;
-    };
-  
-    // 제보를 오보로 처리
-    const markAsFalseReport = (report) => {
-      currentReport.value = report;
-      changeType.value = 'false';
-      statusModalTitle.value = '오보 처리';
-      showStatusModal.value = true;
-      statusChangeNotification.value = `제보 #${report.id}가 오보로 확인되었습니다. 감사합니다.`;
-    };
-  
-    // 추가 정보 요청
-    const requestMoreInfo = (report) => {
-      currentReport.value = report;
-      changeType.value = 'moreInfo';
-      statusModalTitle.value = '추가 정보 요청';
-      showStatusModal.value = true;
-      statusChangeNotification.value = `제보 #${report.id}에 대한 추가 정보가 필요합니다. 자세한 위치나 사진을 제공해주세요.`;
-    };
-  
-    // 종결된 이벤트 재개
-    const restoreReport = (report) => {
-      currentReport.value = report;
-      changeType.value = 'restore';
-      statusModalTitle.value = '이벤트 재개';
-      showStatusModal.value = true;
-      statusChangeNotification.value = `${report.isDeleted ? '오보로 처리된 제보' : '종결된 화재'} #${report.id}가 재개되었습니다.`;
-    };
-  
-    // 상태 변경 취소
-    const cancelStatusChange = () => {
-      // 상태 변경 전으로 되돌리기
-      if (changeType.value === 'status' && currentReport.value) {
-        // 이전 상태로 복원 (여기서는 간단히 처리)
-        // 실제로는 이전 상태를 저장해두고 복원해야 함
-      }
-      
-      // 모달 닫기
-      showStatusModal.value = false;
-      statusChangeReason.value = '';
-      statusChangeNotification.value = '';
-      currentReport.value = null;
-    };
-  
-    // 상태 변경 확인
-    const confirmStatusChange = () => {
-      if (!currentReport.value) return;
-      
-      const now = new Date();
-      const formattedTime = '방금 전'; // 실제로는 시간 포맷팅 로직 필요
-      
-      // 상태 변경 타입에 따른 처리
-      if (changeType.value === 'confirm') {
-        // 제보를 확인된 화재로 변경
-        const newFireReport = {
-          id: currentReport.value.id,
-          username: currentReport.value.username,
-          userAvatar: currentReport.value.userAvatar,
-          location: currentReport.value.location,
-          time: currentReport.value.time,
-          riskLevel: "중간", // 기본값
-          status: "진행 중",
-          verified: true,
-          confirmedByFireDept: false // 소방관 확인은 기본적으로 false
-        };
-        
-        // 확인된 화재 목록에 추가
-        activeReports.value.push(newFireReport);
-        
-        // 검토 필요 제보 목록에서 제거
-        pendingReports.value = pendingReports.value.filter(report => report.id !== currentReport.value.id);
-        
-      } else if (changeType.value === 'false') {
-        // 오보로 처리하고 제보 목록에서 제거
-        const falseReport = {
-          ...currentReport.value,
-          isDeleted: true,
-          closeReason: statusChangeReason.value,
-          closedTime: formattedTime
-        };
-        
-        // 종결된 이벤트 목록에 추가
-        closedReports.value.unshift(falseReport);
-        
-        // 검토 필요 제보 목록에서 제거
-        pendingReports.value = pendingReports.value.filter(report => report.id !== currentReport.value.id);
-        
-      } else if (changeType.value === 'moreInfo') {
-        // 추가 정보 요청 처리 (실제로는 알림 전송 등의 로직 필요)
-        console.log(`추가 정보 요청: ${currentReport.value.id}`);
-        
-      } else if (changeType.value === 'delete') {
-        // 화재 이벤트를 오보로 처리하고 종결된 이벤트로 이동
-        const deletedReport = {
-          ...currentReport.value,
-          isDeleted: true,
-          closeReason: statusChangeReason.value,
-          closedTime: formattedTime
-        };
-        
-        // 종결된 이벤트 목록에 추가
-        closedReports.value.unshift(deletedReport);
-        
-        // 활성 화재 목록에서 제거
-        activeReports.value = activeReports.value.filter(report => report.id !== currentReport.value.id);
-        
-      } else if (changeType.value === 'status' && currentReport.value.status === '종결') {
-        // 화재 상태를 종결로 변경
-        const closedReport = {
-          ...currentReport.value,
-          status: '종결',
-          closeReason: statusChangeReason.value,
-          closedTime: formattedTime
-        };
-        
-        // 종결된 이벤트 목록에 추가
-        closedReports.value.unshift(closedReport);
-        
-        // 활성 화재 목록에서 제거
-        activeReports.value = activeReports.value.filter(report => report.id !== currentReport.value.id);
-        
-      } else if (changeType.value === 'restore') {
-        // 종결된 이벤트를 다시 활성화
-        const restoredReport = {
-          ...currentReport.value,
-          status: '진행 중',
-          isDeleted: false
-        };
-        
-        // 활성 화재 목록에 추가
-        activeReports.value.push(restoredReport);
-        
-        // 종결된 이벤트 목록에서 제거
-        closedReports.value = closedReports.value.filter(report => report.id !== currentReport.value.id);
-        
-      } else if (changeType.value === 'firefighter') {
-        // 소방관 확인 취소
-        currentReport.value.confirmedByFireDept = false;
-        currentReport.value.confirmedAt = null;
-      }
-      
-      // 변경 사항 로깅 (실제로는 서버에 저장)
-      console.log(`상태 변경: ${changeType.value}, 보고서 ID: ${currentReport.value.id}, 사유: ${statusChangeReason.value}`);
-      
-      // 알림 전송 (실제로는 서버에 요청)
-      if (statusChangeNotification.value) {
-        console.log(`알림 전송: ${statusChangeNotification.value}`);
-      }
-      
-      // 모달 닫기
-      showStatusModal.value = false;
-      statusChangeReason.value = '';
-      statusChangeNotification.value = '';
-      currentReport.value = null;
-    };
-  
-    // 컴포넌트 마운트 시 초기화
-    onMounted(() => {
-      console.log('AdminPage 마운트됨');
-    });
-  
-    // return 문에 navigateToFullRiskMap 추가
-    return {
-      activeTab,
-      activeReports,
-      pendingReports,
-      closedReports,
-      showStatusModal,
-      statusModalTitle,
-      statusChangeReason,
-      statusChangeNotification,
-      showFullRiskMap,
-      handleStatusChange,
-      toggleFirefighterConfirmation,
-      deleteFireEvent,
-      confirmAsFireReport,
-      markAsFalseReport,
-      requestMoreInfo,
-      restoreReport,
-      cancelStatusChange,
-      confirmStatusChange,
-      navigateToFullRiskMap
-    };
+  // 상태에 따른 기본 알림 메시지 설정
+  if (report.status === '종결') {
+    statusChangeNotification.value = `화재 #${report.id}가 종결 처리되었습니다.`;
+  } else {
+    statusChangeNotification.value = `화재 #${report.id}의 상태가 "${report.status}"(으)로 변경되었습니다.`;
   }
 };
+
+// 소방관 확인 토글
+const toggleFirefighterConfirmation = (report) => {
+  if (report.confirmedByFireDept) {
+    // 이미 확인된 경우, 확인 취소 모달 표시
+    currentReport.value = report;
+    changeType.value = 'firefighter';
+    statusModalTitle.value = '소방관 확인 취소';
+    statusChangeReason.value = '';
+    statusChangeNotification.value = `화재 #${report.id}의 소방관 확인이 취소되었습니다.`;
+    showStatusModal.value = true;
+  } else {
+    // 확인되지 않은 경우, 확인 처리
+    report.confirmedByFireDept = true;
+    report.confirmedAt = new Date().toISOString();
+    
+    // 알림 메시지 표시 (실제로는 서버에 요청)
+    console.log(`소방관 확인: 화재 #${report.id}가 소방관에 의해 확인되었습니다.`);
+  }
+};
+
+// 화재 이벤트 삭제 처리
+const deleteFireEvent = (report) => {
+  currentReport.value = report;
+  changeType.value = 'delete';
+  statusModalTitle.value = '화재 이벤트 삭제';
+  showStatusModal.value = true;
+  statusChangeNotification.value = `화재 #${report.id}가 삭제되었습니다.`;
+};
+
+// 제보를 화재로 확인
+const confirmAsFireReport = (report) => {
+  currentReport.value = report;
+  changeType.value = 'confirm';
+  statusModalTitle.value = '화재 확인';
+  showStatusModal.value = true;
+  statusChangeNotification.value = `제보 #${report.id}가 화재로 확인되었습니다. 소방대가 출동 중입니다.`;
+};
+
+// 제보를 오보로 처리
+const markAsFalseReport = (report) => {
+  currentReport.value = report;
+  changeType.value = 'false';
+  statusModalTitle.value = '오보 처리';
+  showStatusModal.value = true;
+  statusChangeNotification.value = `제보 #${report.id}가 오보로 확인되었습니다. 감사합니다.`;
+};
+
+// 추가 정보 요청
+const requestMoreInfo = (report) => {
+  currentReport.value = report;
+  changeType.value = 'moreInfo';
+  statusModalTitle.value = '추가 정보 요청';
+  showStatusModal.value = true;
+  statusChangeNotification.value = `제보 #${report.id}에 대한 추가 정보가 필요합니다. 자세한 위치나 사진을 제공해주세요.`;
+};
+
+// 종결된 이벤트 재개
+const restoreReport = (report) => {
+  currentReport.value = report;
+  changeType.value = 'restore';
+  statusModalTitle.value = '이벤트 재개';
+  showStatusModal.value = true;
+  statusChangeNotification.value = `${report.isDeleted ? '오보로 처리된 제보' : '종결된 화재'} #${report.id}가 재개되었습니다.`;
+};
+
+// 상태 변경 취소
+const cancelStatusChange = () => {
+  // 상태 변경 전으로 되돌리기
+  if (changeType.value === 'status' && currentReport.value) {
+    // 이전 상태로 복원 (여기서는 간단히 처리)
+    // 실제로는 이전 상태를 저장해두고 복원해야 함
+  }
+  
+  // 모달 닫기
+  showStatusModal.value = false;
+  statusChangeReason.value = '';
+  statusChangeNotification.value = '';
+  currentReport.value = null;
+};
+
+// 상태 변경 확인
+const confirmStatusChange = () => {
+  if (!currentReport.value) return;
+  
+  const now = new Date();
+  const formattedTime = '방금 전'; // 실제로는 시간 포맷팅 로직 필요
+  
+  // 상태 변경 타입에 따른 처리
+  if (changeType.value === 'confirm') {
+    // 제보를 확인된 화재로 변경
+    const newFireReport = {
+      id: currentReport.value.id,
+      username: currentReport.value.username,
+      userAvatar: currentReport.value.userAvatar,
+      location: currentReport.value.location,
+      time: currentReport.value.time,
+      riskLevel: "중간", // 기본값
+      status: "진행 중",
+      verified: true,
+      confirmedByFireDept: false, // 소방관 확인은 기본적으로 false
+      videoUrl: currentReport.value.videoUrl, // 비디오 URL 유지
+      imageUrl: currentReport.value.imageUrl // 이미지 URL 유지
+    };
+    
+    // 확인된 화재 목록에 추가
+    activeReports.value.push(newFireReport);
+    
+    // 검토 필요 제보 목록에서 제거
+    pendingReports.value = pendingReports.value.filter(report => report.id !== currentReport.value.id);
+    
+  } else if (changeType.value === 'false') {
+    // 오보로 처리하고 제보 목록에서 제거
+    const falseReport = {
+      ...currentReport.value,
+      isDeleted: true,
+      closeReason: statusChangeReason.value,
+      closedTime: formattedTime
+    };
+    
+    // 종결된 이벤트 목록에 추가
+    closedReports.value.unshift(falseReport);
+    
+    // 검토 필요 제보 목록에서 제거
+    pendingReports.value = pendingReports.value.filter(report => report.id !== currentReport.value.id);
+    
+  } else if (changeType.value === 'moreInfo') {
+    // 추가 정보 요청 처리 (실제로는 알림 전송 등의 로직 필요)
+    console.log(`추가 정보 요청: ${currentReport.value.id}`);
+    
+  } else if (changeType.value === 'delete') {
+    // 화재 이벤트를 오보로 처리하고 종결된 이벤트로 이동
+    const deletedReport = {
+      ...currentReport.value,
+      isDeleted: true,
+      closeReason: statusChangeReason.value,
+      closedTime: formattedTime
+    };
+    
+    // 종결된 이벤트 목록에 추가
+    closedReports.value.unshift(deletedReport);
+    
+    // 활성 화재 목록에서 제거
+    activeReports.value = activeReports.value.filter(report => report.id !== currentReport.value.id);
+    
+  } else if (changeType.value === 'status' && currentReport.value.status === '종결') {
+    // 화재 상태를 종결로 변경
+    const closedReport = {
+      ...currentReport.value,
+      status: '종결',
+      closeReason: statusChangeReason.value,
+      closedTime: formattedTime
+    };
+    
+    // 종결된 이벤트 목록에 추가
+    closedReports.value.unshift(closedReport);
+    
+    // 활성 화재 목록에서 제거
+    activeReports.value = activeReports.value.filter(report => report.id !== currentReport.value.id);
+    
+  } else if (changeType.value === 'restore') {
+    // 종결된 이벤트를 다시 활성화
+    const restoredReport = {
+      ...currentReport.value,
+      status: '진행 중',
+      isDeleted: false
+    };
+    
+    // 활성 화재 목록에 추가
+    activeReports.value.push(restoredReport);
+    
+    // 종결된 이벤트 목록에서 제거
+    closedReports.value = closedReports.value.filter(report => report.id !== currentReport.value.id);
+    
+  } else if (changeType.value === 'firefighter') {
+    // 소방관 확인 취소
+    currentReport.value.confirmedByFireDept = false;
+    currentReport.value.confirmedAt = null;
+  }
+  
+  // 변경 사항 로깅 (실제로는 서버에 저장)
+  console.log(`상태 변경: ${changeType.value}, 보고서 ID: ${currentReport.value.id}, 사유: ${statusChangeReason.value}`);
+  
+  // 알림 전송 (실제로는 서버에 요청)
+  if (statusChangeNotification.value) {
+    console.log(`알림 전송: ${statusChangeNotification.value}`);
+  }
+  
+  // 모달 닫기
+  showStatusModal.value = false;
+  statusChangeReason.value = '';
+  statusChangeNotification.value = '';
+  currentReport.value = null;
+};
+
+// 보고서 상세 보기
+const viewReportDetail = (reportId) => {
+  router.push(`/admin/report/${reportId}`);
+};
+
+// 전체 위험 지도로 이동
+const navigateToFullRiskMap = () => {
+  router.push('/admin/full-risk-map');
+};
+
+// 컴포넌트 마운트 시 초기화
+onMounted(() => {
+  console.log('AdminPage 마운트됨');
+});
 </script>
 
 <style scoped>
@@ -1045,3 +1057,4 @@ input[type="range"]::-moz-range-thumb {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 </style>
+
