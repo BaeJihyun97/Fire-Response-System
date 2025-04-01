@@ -25,10 +25,10 @@ spring:
         binder:
           brokers: localhost:9092
       bindings:
-          functionRouter-in-0:              
-            group: reportmanagement
+          functionRouter-in-0:
+            group: reportmanagement-${random.uuid}
             destination: fireresponsesystem
-            contentType: application/json  
+            contentType: application/json
           producer-out-0:
             destination: fireresponsesystem
             contentType: application/json
@@ -56,7 +56,7 @@ spring:
   cloud:
     function:
       routing-expression: "headers['type'] != null ? 'routeMessage' : 'discardFunction'"
-    #   routing-expression: > 
+    #   routing-expression: >
     #     headers['type'] != null &&
     #     T(java.lang.String).new((byte[]) headers['type'], T(java.nio.charset.StandardCharsets).UTF_8).equals('VideoAnalysisFailed') ? 'wheneverVideoAnalysisFailed_UpdateReport' :
     #     T(java.lang.String).new((byte[]) headers['type'], T(java.nio.charset.StandardCharsets).UTF_8).equals('IdentifiedAsNonFireEvent') ? 'wheneverIdentifiedAsNonFireEvent_UpdateReport' :
@@ -69,14 +69,14 @@ spring:
         binder:
           brokers: my-kafka:9092
       bindings:
-          functionRouter-in-0:              
-            group: reportmanagement
+          functionRouter-in-0:
+            group: reportmanagement-${random.uuid}
             destination: fireresponsesystem
-            contentType: application/json  
+            contentType: application/json
           producer-out-0:
             destination: fireresponsesystem
             contentType: application/json
-            
+
 ---
 spring:
   config:
