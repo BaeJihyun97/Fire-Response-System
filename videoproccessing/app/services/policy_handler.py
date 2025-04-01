@@ -57,6 +57,8 @@ class PolicyHandler:
                 "success": True,
                 "video_analysis_id": report.video_analysis_id,
                 "fire_detected": report.openai_analysis["fire_detected"],
+                "tags": report.openai_analysis["objects"],
+                "severity": report.openai_analysis["severity"],
             }
 
         except Exception as e:

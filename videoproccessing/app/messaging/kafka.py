@@ -196,6 +196,8 @@ class KafkaConsumer:
                         report_id=event.report_id,
                         event_id=event.event_id,
                         success=result["success"],
+                        tags=result["tags"],
+                        severity=result["severity"],
                         fire_detected=result["fire_detected"],
                     )
                     self.producer.publish("VideoAnalyzed", completed_event)

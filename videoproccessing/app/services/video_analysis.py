@@ -20,7 +20,7 @@ class VideoAnalysisService:
         self.settings = get_settings()
         self.storage = AzureBlobStorage()
         self.frame_size = (640, 480)  # Target frame size
-        self.max_frames = 20  # Maximum number of frames to extract
+        self.max_frames = 30  # Maximum number of frames to extract
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
@@ -88,18 +88,9 @@ class VideoAnalysisService:
 
             # Get video properties
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            fps = int(cap.get(cv2.CAP_PROP_FPS))
-            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            duration = total_frames / fps
-
-            print(
-                f"Video properties: {total_frames} frames, {fps} fps, {width}x{height}, duration: {duration:.2f}s"
-            )
 
             # Calculate frame indices for equal spacing
             frame_indices = np.linspace(0, total_frames - 1, self.max_frames, dtype=int)
-            print(f"Extracting frames at indices: {frame_indices}")
 
             # Extract frames at calculated indices
             for frame_idx in frame_indices:
@@ -197,15 +188,7 @@ class VideoAnalysisService:
                 "color": majority_vote([r["smoke"]["color"] for r in results]),
                 "density": majority_vote([r["smoke"]["density"] for r in results]),
             },
-            "location": {
-                "indoor": any(r["location"]["indoor"] for r in results),
-                "environment_description": majority_vote(
-                    [r["location"]["environment_description"] for r in results]
-                ),
-                "nearby_objects": sorted(
-                    set(obj for r in results for obj in r["location"]["nearby_objects"])
-                ),
-            },
+            "objects": sorted(set(obj for r in results for obj in r["objects"])),
             "people_or_animals": {
                 "present": any(r["people_or_animals"]["present"] for r in results),
                 "details": majority_vote(
@@ -222,17 +205,8 @@ class VideoAnalysisService:
                 "responders_present": any(
                     r["firefighting_response"]["responders_present"] for r in results
                 ),
-                "tools_visible": sorted(
-                    set(
-                        tool
-                        for r in results
-                        for tool in r["firefighting_response"]["tools_visible"]
-                    )
-                ),
             },
-            "lighting_conditions": majority_vote(
-                [r["lighting_conditions"] for r in results]
-            ),
+            "severity": majority_vote([r["severity"] for r in results]),
         }
 
         return merged
@@ -246,6 +220,15 @@ class VideoAnalysisService:
         system_prompt = """
         You are an expert fire analysis assistant. Analyze the provided image frame carefully and respond strictly with the following JSON schema. But MODIFY the values according to what you observe in the image. Do NOT include any additional text or explanation.
 
+        Important rules:
+        - Only set "fire_detected": true **if there is visible fire and/or smoke that is clearly from a fire** (e.g. flames, black smoke from burning material).
+        - Do **not** set "fire_detected": true for ordinary smoke such as from factory exhaust, chimneys, vehicles, or other non-fire sources.
+        - Use only the following options for certain fields:
+            - "fire_detected": [true, false]
+            - "severity": ["N/A", "low", "moderate", "high", "extreme"]
+            - "fire_size": ["N/A", "small", "moderate", "large", "very large"]
+        - Return with the following JSON schema EVEN IF there is no fire.
+
         {{
         "fire_detected": true,
         "fire_size": "moderate",
@@ -255,11 +238,7 @@ class VideoAnalysisService:
             "color": "black",
             "density": "thick"
         }},
-        "location": {{
-            "indoor": false,
-            "environment_description": "Urban street at night",
-            "nearby_objects": ["car", "streetlight", "sidewalk"]
-        }},
+        "objects": ["car", "streetlight", "sidewalk", "tree"],
         "people_or_animals": {{
             "present": true,
             "details": "Two people running from the fire, no visible injuries"
@@ -270,17 +249,10 @@ class VideoAnalysisService:
         }},
         "firefighting_response": {{
             "responders_present": false,
-            "tools_visible": []
         }},
-        "lighting_conditions": "Nighttime with fire providing illumination"
+        "severity": "moderate"
         }}
         """
-
-        # Setup prompt template
-        # prompt = ChatPromptTemplate.from_messages([
-        #     ("system", system_prompt),
-        #     ("human", "Analyze these image frames: {frames}")
-        # ])
 
         system_message = SystemMessage(content=system_prompt)
 
@@ -295,7 +267,6 @@ class VideoAnalysisService:
         batches = self._batch_frames_by_token_limit(frames)
 
         for i, batch in enumerate(batches):
-            print(f"Analyzing batch {i+1}/{len(batches)}...")
             content = [{"type": "text", "text": "Analyze the following image frames:"}]
             for frame in batch:
                 content.append(
@@ -315,7 +286,7 @@ class VideoAnalysisService:
                 results.append(parsed)
 
             except Exception as e:
-                print(f"Error analyzing frame {i+1}: {e}")
+                print(f"Error analyzing frame {i+1}/{len(batches)}: {e}")
 
         # Print the structured result as Python dictionary
         merged_result = self._merge_fire_frame_analyses(results)

@@ -238,7 +238,6 @@ async def process_video_analysis(event: VideoAnalysisRequestedEvent):
         result = await policy_handler.handle_event(
             "video_analysis_requested", event.model_dump()
         )
-        print(f"Policy handler result: {result}")
 
         if result["success"]:
             if result["fire_detected"]:
@@ -249,6 +248,8 @@ async def process_video_analysis(event: VideoAnalysisRequestedEvent):
                     report_id=event.report_id,
                     event_id=event.event_id,
                     success=result["success"],
+                    tags=result["tags"],
+                    severity=result["severity"],
                     fire_detected=result["fire_detected"],
                 )
                 kafka_producer.publish("VideoAnalyzed", completed_event)

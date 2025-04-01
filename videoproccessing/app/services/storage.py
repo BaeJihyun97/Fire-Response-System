@@ -36,7 +36,7 @@ class AzureBlobStorage:
             )
 
             # Construct the full URL
-            blob_url = f"https://{self.blob_service_client.account_name}.blob.core.windows.net/{self.container_name}/{blob_path}?{sas_token}"
+            blob_url = f"https://{self.blob_service_client.account_name}.blob.core.windows.net/{self.container_name}/{blob_path}"  # ?{sas_token}"
             return blob_url
 
         except Exception as e:
