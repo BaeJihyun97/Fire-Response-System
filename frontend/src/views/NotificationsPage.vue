@@ -88,9 +88,9 @@
           ]"
         >
           <div class="flex">
-            <!-- 알림 타입에 따른 아이콘 -->
+            <!-- 알림 타입에 따른 아이콘 - 고정 크기 추가 -->
             <div :class="[
-              'rounded-full p-3 mr-4 flex-shrink-0',
+              'rounded-full p-2 mr-4 flex-shrink-0 h-10 w-10 flex items-center justify-center',
               getNotificationTypeClass(notification.type)
             ]">
               <component :is="getNotificationIcon(notification.type)" class="h-5 w-5" />
@@ -136,10 +136,10 @@
             <Home class="h-6 w-6" />
             <span class="text-xs mt-1">홈</span>
           </router-link>
-          <button class="flex flex-col items-center text-gray-500">
-            <Search class="h-6 w-6" />
-            <span class="text-xs mt-1">검색</span>
-          </button>
+          <router-link to="/map" class="flex flex-col items-center text-gray-500">
+            <Map class="h-6 w-6" />
+            <span class="text-xs mt-1">지도</span>
+          </router-link>
           <router-link to="/report">
             <button class="rounded-full bg-gradient-to-r from-primary-600 to-primary-500 h-14 w-14 flex items-center justify-center text-white shadow-lg transform hover:scale-105 transition-transform duration-200">
               <Camera class="h-7 w-7" />
@@ -149,15 +149,21 @@
             <Bell class="h-6 w-6" />
             <span class="text-xs mt-1 font-medium">알림</span>
           </router-link>
-          <button class="flex flex-col items-center text-gray-500">
+          <router-link to="/profile" class="flex flex-col items-center text-gray-500">
             <User class="h-6 w-6" />
             <span class="text-xs mt-1">내정보</span>
-          </button>
+          </router-link>
         </div>
       </div>
     </div>
   </div>
 </template>
+
+<script>
+export default {
+  name: 'NotificationsPage'
+}
+</script>
 
 <script setup>
 import { ref, computed } from 'vue';
@@ -173,7 +179,8 @@ import {
   Home,
   Search,
   Camera,
-  User
+  User,
+  Map
 } from 'lucide-vue-next';
 import { useRouter } from 'vue-router';
 import { useNotificationStore } from '../stores/notificationStore';

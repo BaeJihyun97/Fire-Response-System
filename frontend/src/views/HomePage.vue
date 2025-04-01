@@ -14,11 +14,41 @@
       </div>
     </div>
     
+    <!-- 상단 네비게이션 바 -->
+    <div class="bg-white border-b border-gray-200 py-2 shadow-sm">
+      <div class="container mx-auto max-w-lg px-4">
+        <div class="flex justify-between items-center">
+          <router-link to="/" class="flex items-center">
+            <Flame class="h-6 w-6 text-primary-600 mr-2" />
+            <span class="font-bold text-xl text-gray-900">화재알리미</span>
+          </router-link>
+          
+          <div class="flex items-center space-x-4">
+            <router-link to="/report" class="flex items-center text-gray-700 hover:text-primary-600">
+              <Camera class="h-5 w-5 mr-1" />
+              <span class="text-sm font-medium">제보하기</span>
+            </router-link>
+            
+            <router-link to="/notifications" class="flex items-center text-gray-700 hover:text-primary-600 relative">
+              <Bell class="h-5 w-5 mr-1" />
+              <span class="text-sm font-medium">알림</span>
+              <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                3
+              </span>
+            </router-link>
+            
+            <router-link to="/profile">
+              <div class="h-8 w-8 rounded-full bg-gray-200 overflow-hidden">
+                <img src="https://placehold.co/32x32" alt="프로필" class="h-full w-full object-cover" />
+              </div>
+            </router-link>
+          </div>
+        </div>
+      </div>
+    </div>
+    
     <!-- 메인 컨텐츠 -->
     <div class="container mx-auto px-4 py-4 max-w-lg pb-24">
-      <!-- 기존 내용 유지 -->
-      <!-- ... -->
-      
       <!-- 탭 컴포넌트 -->
       <div class="mb-6">
         <div class="flex border-b border-gray-200 mb-4">
@@ -52,7 +82,7 @@
 
           <div class="space-y-6">
             <fire-report-card 
-              v-for="fire in confirmedFires" 
+              v-for="fire in fireReports" 
               :key="fire.id" 
               :fire="fire"
             />
@@ -72,7 +102,7 @@
       </div>
     </div>
 
-    <!-- 하단 네비게이션 바 -->
+    <!-- 하단 네비게이션 바 - 검색 탭을 지도 탭으로 변경 -->
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 shadow-lg">
       <div class="container mx-auto max-w-lg">
         <div class="flex justify-around items-center">
@@ -80,10 +110,10 @@
             <Home class="h-6 w-6" />
             <span class="text-xs mt-1 font-medium">홈</span>
           </button>
-          <button class="flex flex-col items-center text-gray-500">
-            <Search class="h-6 w-6" />
-            <span class="text-xs mt-1">검색</span>
-          </button>
+          <router-link to="/map" class="flex flex-col items-center text-gray-500">
+            <Map class="h-6 w-6" />
+            <span class="text-xs mt-1">지도</span>
+          </router-link>
           <router-link to="/report">
             <button class="rounded-full bg-gradient-to-r from-primary-600 to-primary-500 h-14 w-14 flex items-center justify-center text-white shadow-lg transform hover:scale-105 transition-transform duration-200">
               <Camera class="h-7 w-7" />
@@ -93,10 +123,10 @@
             <Bell class="h-6 w-6" />
             <span class="text-xs mt-1">알림</span>
           </router-link>
-          <button class="flex flex-col items-center text-gray-500">
+          <router-link to="/profile" class="flex flex-col items-center text-gray-500">
             <User class="h-6 w-6" />
             <span class="text-xs mt-1">내정보</span>
-          </button>
+          </router-link>
         </div>
       </div>
     </div>
@@ -104,27 +134,26 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { AlertTriangle, Bell, Camera, Home, Phone, Search, User } from 'lucide-vue-next';
+import { ref, onMounted } from 'vue';
+import { AlertTriangle, Bell, Camera, Flame, Home, Map, Phone, User } from 'lucide-vue-next';
 import FireReportCard from '../components/FireReportCard.vue';
 import CommunityPostCard from '../components/CommunityPostCard.vue';
-import { useNotificationStore } from '../stores/notificationStore';
 
-const notificationStore = useNotificationStore();
 const activeTab = ref('confirmed');
 
-const confirmedFires = ref([
+// 화재 제보 데이터
+const fireReports = ref([
   {
-    id: "1",
-    username: "소방지킴이",
-    userAvatar: "https://placehold.co/40x40",
-    location: "강남역, 서울",
-    time: "5분 전",
-    description: "상업 건물 3층에서 화재 발생. 연기가 심하게 나고 있습니다. 주변 도로 통제 중.",
-    riskLevel: "높음",
-    imageUrl: "https://placehold.co/400x200",
-    distance: "1.2km",
-    confirms: 128, // 좋아요에서 confirms로 변경
+    id: '1',
+    username: '소방지킴이',
+    userAvatar: 'https://placehold.co/40x40',
+    coordinates: { lat: 37.498095, lng: 127.027610 }, // 강남역 좌표
+    time: '5분 전',
+    description: '상업 건물 3층에서 화재 발생. 연기가 심하게 나고 있습니다.',
+    imageUrl: 'https://placehold.co/600x400',
+    riskLevel: '높음',
+    distance: '1.2km',
+    confirms: 128,
     comments: 24,
     verified: true
   },
@@ -132,46 +161,53 @@ const confirmedFires = ref([
     id: "2",
     username: "안전제일",
     userAvatar: "https://placehold.co/40x40",
-    location: "여의도 공원, 서울",
+    coordinates: { lat: 37.526120, lng: 126.925771 }, // 여의도 공원 좌표
     time: "15분 전",
     description: "공원 동쪽 입구 근처에서 작은 산불 발생. 소방차 출동 중입니다.",
     riskLevel: "중간",
     imageUrl: "https://placehold.co/400x200",
     distance: "3.5km",
-    confirms: 87, // 좋아요에서 confirms로 변경
+    confirms: 87,
     comments: 15,
     verified: true
   }
 ]);
 
+// 커뮤니티 제보 데이터
 const communityPosts = ref([
   {
-    id: "3",
-    username: "시민제보자",
-    userAvatar: "https://placehold.co/40x40",
-    location: "홍대 앞, 서울",
-    time: "30분 전",
-    description: "이 건물에서 연기가 나는 것 같은데 화재인지 확인 부탁드립니다.",
-    imageUrl: "https://placehold.co/400x200",
-    distance: "5.2km",
-    confirms: 45, // 좋아요에서 confirms로 변경
-    comments: 12,
-    verified: false
+    id: '3',
+    username: '시민제보자',
+    userAvatar: 'https://placehold.co/40x40',
+    coordinates: { lat: 37.566535, lng: 126.977969 }, // 서울시청 좌표
+    time: '10분 전',
+    description: '남산타워 근처에서 연기가 보입니다. 화재인지 확인 부탁드립니다.',
+    imageUrl: 'https://placehold.co/600x400',
+    distance: '2.5km',
+    confirms: 45,
+    comments: 12
   },
   {
     id: "4",
     username: "동네지킴이",
     userAvatar: "https://placehold.co/40x40",
-    location: "강동구 천호동, 서울",
+    coordinates: { lat: 37.538617, lng: 127.094454 }, // 강동구 천호동 좌표
     time: "1시간 전",
     description: "아파트 단지 근처에서 연기가 보입니다. 화재인지 확인 필요합니다.",
     imageUrl: "https://placehold.co/400x200",
     distance: "8.7km",
-    confirms: 67, // 좋아요에서 confirms로 변경
+    confirms: 67,
     comments: 23,
     verified: false
   }
 ]);
+
+// 디버깅을 위한 로그
+onMounted(() => {
+  console.log('HomePage 마운트됨');
+  console.log('fireReports:', fireReports.value);
+  console.log('communityPosts:', communityPosts.value);
+});
 </script>
 
 <style scoped>

@@ -7,6 +7,9 @@ import TestPage from '../views/TestPage.vue';
 import NotificationsPage from '../views/NotificationsPage.vue'; // 알림 페이지 추가
 import AllFireReportsView from '../views/AllFireReportsView.vue';
 import AllClosedEventsView from '../views/AllClosedEventsView.vue';
+import MapPage from '../views/MapPage.vue';
+import FireReportDetail from '../views/admin/FireReportDetail.vue'; // 관리자용 화재 제보 상세 페이지 추가
+
 const routes = [
   {
     path: '/',
@@ -45,6 +48,17 @@ const routes = [
     component: AllClosedEventsView
   },
   {
+    path: '/admin/full-risk-map',
+    name: 'FullRiskMap',
+    component: () => import('../views/admin/FullRiskMapPage.vue')
+  },
+  {
+    path: '/admin/report/:id', // 관리자용 화재 제보 상세 페이지 경로 추가
+    name: 'AdminFireReportDetail',
+    component: FireReportDetail,
+    props: true
+  },
+  {
     path: '/test',
     name: 'Test',
     component: TestPage
@@ -53,7 +67,17 @@ const routes = [
     path: '/notifications', // 알림 페이지 경로 추가
     name: 'Notifications',
     component: NotificationsPage
-  }
+  },
+  {
+    path: '/map',
+    name: 'Map',
+    component: MapPage
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: () => import('../views/ProfilePage.vue')
+  },
 ];
 
 const router = createRouter({

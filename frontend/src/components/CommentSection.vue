@@ -12,14 +12,9 @@
             <img :src="comment.userAvatar" :alt="comment.username" class="h-full w-full object-cover" />
           </div>
           <div class="flex-1">
-            <div class="flex items-center justify-between">
-              <div>
-                <span class="font-medium text-gray-900">{{ comment.username }}</span>
-                <span class="text-xs text-gray-500 ml-2">{{ comment.time }}</span>
-              </div>
-              <button class="text-gray-400 hover:text-gray-500">
-                <MoreVertical class="h-4 w-4" />
-              </button>
+            <div class="flex items-center">
+              <span class="font-medium text-gray-900">{{ comment.username }}</span>
+              <span class="text-xs text-gray-500 ml-2">{{ comment.time }}</span>
             </div>
             <p class="text-gray-700 text-sm mt-1">{{ comment.text }}</p>
             <!-- 답글 및 신고 버튼 제거 -->
@@ -57,9 +52,20 @@
   </div>
   </template>
   
+  <script>
+  export default {
+    name: 'CommentSection',
+    props: {
+      postId: {
+        type: String,
+        required: true
+      }
+    }
+  }
+  </script>
+  
   <script setup>
   import { ref } from 'vue';
-  import { MoreVertical } from 'lucide-vue-next';
   
   // 댓글 데이터
   const comments = ref([
