@@ -1,23 +1,25 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
+import path from 'path';
 
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [vue()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
   server: {
     proxy: {
-      // Naver Maps API 요청을 프록시
-      '/api/naver': {
-        target: 'https://naveropenapi.apigw.ntruss.com',
+      '/api': {
+        target: 'http://20.249.194.117:8080',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/naver/, ''),
-        headers: {
-          'X-NCP-APIGW-API-KEY-ID': process.env.VITE_NAVER_MAPS_CLIENT_ID
-        }
+        rewrite: (path) => path.replace(/^\/api/, ''),
+        secure: false,
+        ws: true
       }
     },
-    host: true,
-    allowedHosts: [
-      '경로'
-    ]
+    cors: true
   }
 });

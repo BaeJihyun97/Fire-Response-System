@@ -53,6 +53,40 @@
               </div>
               
               <div class="mb-4">
+                <label for="firstname" class="block text-sm font-medium text-gray-700 mb-1">이름</label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User class="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input 
+                    v-model="firstname" 
+                    type="text" 
+                    id="firstname" 
+                    class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="이름을 입력하세요"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div class="mb-4">
+                <label for="lastname" class="block text-sm font-medium text-gray-700 mb-1">성</label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User class="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input 
+                    v-model="lastname" 
+                    type="text" 
+                    id="lastname" 
+                    class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="성을 입력하세요"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div class="mb-4">
                 <label for="password" class="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
                 <div class="relative">
                   <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -165,6 +199,7 @@
   import { useRouter } from 'vue-router';
   import { Eye, EyeOff, Flame, Loader, Lock, Mail, User } from 'lucide-vue-next';
   import AppHeader from '../components/AppHeader.vue';
+  import { authApi } from '@/services/api';
   
   const router = useRouter();
   
@@ -173,6 +208,8 @@
   const email = ref('');
   const password = ref('');
   const confirmPassword = ref('');
+  const firstname = ref('');
+  const lastname = ref('');
   const showPassword = ref(false);
   const showConfirmPassword = ref(false);
   const agreeTerms = ref(false);
@@ -198,7 +235,7 @@
   const handleRegister = async () => {
     try {
       // 입력 검증
-      if (!username.value || !email.value || !password.value || !confirmPassword.value) {
+      if (!username.value || !email.value || !password.value || !confirmPassword.value || !firstname.value || !lastname.value) {
         showToastMessage('모든 필드를 입력해주세요.');
         return;
       }
@@ -215,9 +252,15 @@
       
       isLoading.value = true;
       
-      // 회원가입 시뮬레이션 (실제 구현 시 제거)
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      // 서버에 회원가입 요청
+      await authApi.register({
+        username: username.value,
+        password: password.value,
+        email: email.value,
+        firstname: firstname.value,
+        lastname: lastname.value
+      });
+
       // 회원가입 성공 처리
       showToastMessage('회원가입이 완료되었습니다!');
       

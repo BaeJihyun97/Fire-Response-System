@@ -102,6 +102,7 @@
   import { useRouter } from 'vue-router';
   import { Eye, EyeOff, Flame, Loader, Lock, User } from 'lucide-vue-next';
   import AppHeader from '../components/AppHeader.vue';
+  import { authApi } from '@/services/api';
   
   const router = useRouter();
   
@@ -132,16 +133,29 @@
       
       isLoading.value = true;
       
-      // 로그인 시뮬레이션 (실제 구현 시 제거)
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // 서버에 로그인 요청
+      const response = await authApi.login({
+        username: username.value,
+        password: password.value
+      });
+
+      // 응답 데이터 로깅
+      console.log('Login Response:', response.data);
+
+      // 토큰 정보 저장
+      const { access_token, refresh_token, expires_in } = response.data;
+      localStorage.setItem('token', access_token);
+      localStorage.setItem('refresh_token', refresh_token);
+      localStorage.setItem('token_expires_in', expires_in);
+      localStorage.setItem('token_timestamp', Date.now().toString());
       
       // 로그인 성공 처리
       showToastMessage('로그인 성공!');
       
-      // 홈 페이지로 리디렉션
+      // 3초 후에 홈 페이지로 리디렉션 (로그 확인을 위해 시간을 늘림)
       setTimeout(() => {
         router.push('/');
-      }, 1000);
+      }, 3000);
       
     } catch (error) {
       console.error('로그인 오류:', error);
