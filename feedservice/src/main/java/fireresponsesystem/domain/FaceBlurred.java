@@ -9,8 +9,9 @@ import lombok.*;
 @ToString
 public class FaceBlurred extends AbstractEvent {
 
-    private String videoId;
-    private String reportId;
+    private Long videoId;
+    private Long reportId;
+    private Long eventId;
     private String originalVideoUri;
     private String blurredVideoUri;
     private Boolean fireDetected;

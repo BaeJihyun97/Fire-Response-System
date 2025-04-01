@@ -11,10 +11,9 @@ import lombok.*;
 @ToString
 public class Reacted extends AbstractEvent {
 
-    private String postId;
-    private String blurredVideoUri;
-    private String userId;
-    private String eventId;
+    private Long postId;
+    private Long userId;
+    private Long eventId;
     private List<String> comments;
     private Integer reactionCount;
     private Date createdAt;

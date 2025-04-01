@@ -11,10 +11,10 @@ import lombok.*;
 @ToString
 public class PostUpdated extends AbstractEvent {
 
-    private String postId;
+    private Long postId;
     private String blurredVideoUri;
-    private String userId;
-    private String eventId;
+    private Long userId;
+    private Long eventId;
     private List<String> comments;
     private Integer reactionCount;
     private Date createdAt;

@@ -12,17 +12,16 @@ import lombok.Data;
 @Entity
 @Table(name = "Comment_table")
 @Data
-Public class Comment {
+public class Comment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private String commentId;
+    private Long commentId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "post_id")
-    private Post post;
+    @Column(name = "post_id")
+    private Long postId;
 
-    private String userId;
+    private Long userId;
 
     private String comment;
 
@@ -45,12 +44,4 @@ Public class Comment {
         );
         return commentRepository;
     }
-
-    // //<<< Clean Arch / Port Method
-    // public void addComment() {
-    //     //implement business logic here:
-
-    //     CommentAdded commentAdded = new CommentAdded(this);
-    //     commentAdded.publishAfterCommit();
-    // }
 }

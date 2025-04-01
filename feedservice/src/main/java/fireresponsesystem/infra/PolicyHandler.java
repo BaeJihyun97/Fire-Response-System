@@ -6,11 +6,21 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.ZoneOffset;
+import org.springframework.beans.factory.annotation.Autowired;
 
 //<<< Clean Arch / Inbound Adaptor
 @Service
 @Transactional
 public class PolicyHandler {
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Bean
     public Consumer<Message<?>> routeMessage() {
@@ -20,7 +30,6 @@ public class PolicyHandler {
             System.out.println("type: " + type);
 
             Map<String, Object> payloadMap = (Map<String, Object>) message.getPayload();
-
 
             Object tsObj = payloadMap.get("timestamp");
             if(tsObj instanceof String) {
@@ -33,17 +42,17 @@ public class PolicyHandler {
             switch (type) {
                 case "EventCreated":
                     EventCreated eventCreated = objectMapper.convertValue(payloadMap, EventCreated.class);
-                    Event.publishPost(eventCreated);
+                    Post.publishPost(eventCreated);
                     break;
 
-                case "Faceblurred":
-                    Faceblurred faceblurred = objectMapper.convertValue(payloadMap, Faceblurred.class);
-                    Event.updatePost(faceblurred);
+                case "FaceBlurred":
+                    FaceBlurred faceBlurred = objectMapper.convertValue(payloadMap, FaceBlurred.class);
+                    Post.updatePost(faceBlurred);
                     break;
 
                 case "IdentifiedAsFireEvent":
                     IdentifiedAsFireEvent identifiedAsFireEvent = objectMapper.convertValue(payloadMap, IdentifiedAsFireEvent.class);
-                    Event.updatePost(identifiedAsFireEvent);
+                    Post.updatePost(identifiedAsFireEvent);
                     break;
 
                 default:

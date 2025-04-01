@@ -9,9 +9,9 @@ import lombok.*;
 @ToString
 public class IdentifiedAsFireEvent extends AbstractEvent {
 
-    private String eventId;
-    private Float longitude;
-    private Float latitude;
+    private Long eventId;
+    private Double longitude;
+    private Double latitude;
     private String status;
     private String eventType;
     private Date createdAt;

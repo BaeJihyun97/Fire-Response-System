@@ -36,6 +36,9 @@ logging:
     org.hibernate.type: trace
     org.springframework.cloud: debug
 
+post:
+  reaction:
+    threshold: 10
 
 server:
   port: 8086
@@ -58,7 +61,7 @@ spring:
     stream:
       kafka:
         binder:
-          brokers: my-kafka:9092
+          brokers: localhost:9092
       bindings:
           functionRouter-in-0:
             group: feedservice
@@ -68,4 +71,6 @@ spring:
             destination: fireresponsesystem
             contentType: application/json
 
-
+post:
+  reaction:
+    threshold: 10
