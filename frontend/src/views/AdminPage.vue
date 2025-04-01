@@ -33,7 +33,7 @@
               <Bell class="h-5 w-5 mr-1" />
               <span class="text-sm font-medium">알림</span>
               <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                3
+                2
               </span>
             </router-link>
             
