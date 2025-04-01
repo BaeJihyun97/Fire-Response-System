@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
+import java.util.ArrayList;
 import lombok.Data;
 
 @Entity
@@ -16,6 +17,7 @@ import lombok.Data;
 public class Post {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private String postId;
 
     private String blurredVideoUri;
@@ -24,8 +26,8 @@ public class Post {
 
     private String eventId;
 
-    @ElementCollection
-    private List<String> comments;
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> comments = new ArrayList<>();
 
     private Integer reactionCount;
 
@@ -35,11 +37,11 @@ public class Post {
 
     @PostPersist
     public void onPostPersist() {
-        PostPublished postPublished = new PostPublished(this);
-        postPublished.publishAfterCommit();
+        // PostPublished postPublished = new PostPublished(this);
+        // postPublished.publishAfterCommit();
 
-        PostUpdated postUpdated = new PostUpdated(this);
-        postUpdated.publishAfterCommit();
+        // PostUpdated postUpdated = new PostUpdated(this);
+        // postUpdated.publishAfterCommit();
     }
 
     public static PostRepository repository() {
