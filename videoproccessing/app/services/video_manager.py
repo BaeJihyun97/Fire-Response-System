@@ -41,22 +41,25 @@ class VideoManager:
             video = Video(report_id=report_id, video_id=video_id)
             await video.save()
 
-            # Process video
-            processed_data, _ = await self.transcoder.transcode_video(
-                file_content, video.video_id
+            # Transcode video
+            encoded_480p, _ = await self.transcoder.transcode_video(
+                file_content, video.video_id, 480
+            )
+            encoded_720p, _ = await self.transcoder.transcode_video(
+                file_content, video.video_id, 720
             )
 
             # Upload videos to storage
-            original_url = self.storage.upload_video(
+            original_video_uri = self.storage.upload_video(
                 file_content, f"{video.video_id}/{video.video_id}.mp4"
             )
-            processed_url = self.storage.upload_video(
-                processed_data, f"{video.video_id}/{video.video_id}_480p.mp4"
+            encoded_video_uri = self.storage.upload_video(
+                encoded_480p, f"{video.video_id}/{video.video_id}_480p.mp4"
             )
 
             # Update video document
-            video.original_video_uri = original_url
-            video.processed_video_uri = processed_url
+            video.original_video_uri = original_video_uri
+            video.processed_video_uri = encoded_video_uri
             video.status = VideoStatus.COMPLETED
             await video.save()
             return video

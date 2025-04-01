@@ -60,6 +60,7 @@ class PolicyHandler:
             }
 
         except Exception as e:
+            print(f"Error in handle_analysis_requested: {str(e)}")
             return {
                 "success": False,
                 "error": str(e),

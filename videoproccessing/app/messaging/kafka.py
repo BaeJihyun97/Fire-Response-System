@@ -3,7 +3,7 @@ import asyncio
 from typing import Callable, Dict, Type
 from confluent_kafka import Consumer, Producer, KafkaException
 from pydantic import BaseModel
-from app.core.config import Settings, get_settings
+from app.core.config import get_settings
 from app.schemas.events import (
     VideoStoredEvent,
     VideoAnalysisCompletedEvent,
@@ -63,8 +63,6 @@ class KafkaProducer:
     def _delivery_callback(self, err, msg):
         if err:
             print(f"Message delivery failed: {str(err)}")
-        else:
-            print(f"Message delivered to {msg.topic()} [{msg.partition()}]")
 
 
 class KafkaConsumer:
@@ -125,12 +123,8 @@ class KafkaConsumer:
                     continue
 
                 try:
-                    print(f"Received message from topic: {msg.topic()}")
-
                     # Parse the message
                     event_data = json.loads(msg.value().decode("utf-8"))
-                    print(f"Parsed event data: {event_data}")
-
                     # Get the appropriate event type based on the headers
                     headers_dict = dict(msg.headers() or {})
                     target_type = headers_dict.get("type", "")
@@ -150,7 +144,7 @@ class KafkaConsumer:
                     if not handlers:
                         print(f"No handler found for the event type: {target_type}")
                         continue
-
+                    print(f"Parsed event data for {target_type}: {event_data}")
                     event = event_type(**event_data)
 
                     # Process the event
@@ -183,7 +177,6 @@ class KafkaConsumer:
         """Handle video analysis requested event."""
         try:
             print(f"Processing analysis requested event for video: {event.video_id}")
-            # Import PolicyHandler here to avoid circular import
             from app.services.policy_handler import PolicyHandler
 
             policy_handler = PolicyHandler()
@@ -192,6 +185,7 @@ class KafkaConsumer:
             result = await policy_handler.handle_event(
                 "video_analysis_requested", event.model_dump()
             )
+            print(f"Policy handler result: {result}")
 
             if result["success"]:
                 if result["fire_detected"]:
@@ -208,7 +202,7 @@ class KafkaConsumer:
             else:
                 # Publish failed event
                 failed_event = VideoAnalysisCompletedEvent(
-                    video_analysis_id=result["video_analysis_id"],
+                    video_analysis_id=None,
                     video_id=event.video_id,
                     report_id=event.report_id,
                     event_id=event.event_id,
@@ -227,89 +221,97 @@ class KafkaConsumer:
                 success=False,
                 fire_detected=False,
             )
-            self.producer.publish(TOPICS["video_analysis_completed"], failed_event)
+            self.producer.publish("VideoAnalysisFailed", failed_event)
 
     async def _handle_blur_face_requested(self, event: VideoAnalysisRequestedEvent):
         """Handle video analysis requested event."""
-        try:
-            video_indexer = self._get_video_indexer_client()
-
-            # Get the original video URL and parse it for the path
-            video = await Video.find_one({"video_id": event.video_id})
-            video_url = video.original_video_uri
-
-            # Extract the original path and add '_blurred' before the extension
-            # Example: if path is 'folder/video.mp4' -> 'folder/video_blurred.mp4'
-            original_path = video_url.split("?")[
-                0
-            ]  # Remove any SAS token or query params
-            path_without_ext = original_path.rsplit(".", 1)[0]
-            extension = original_path.rsplit(".", 1)[1]
-            output_path = f"{path_without_ext}_blurred.{extension}"
-
-            # Upload video to Video Indexer using URL
-            video_id = await video_indexer.upload_video(
-                video_url=video_url,
-                privacy_mode="Private",
-                video_name=f"{event.video_id}.mp4",
-            )
-
-            # Wait for video processing to complete
-            await video_indexer.wait_for_index_processing(video_id)
-            print("Video processing completed")
-
-            # Get video with face blurring and save to same location
-            job_id = await video_indexer.blur_faces(
-                video_id, video_name=f"{event.video_id}_blurred"
-            )
-            print(f"Face blurring job started: {job_id}")
-
-            await video_indexer.wait_for_job(job_id)
-
-            print("Face blurring completed")
-
-            # Clean up the video from Video Indexer
-            # await video_indexer.delete_video(video_id)
-            blurred_video_id = await video_indexer.get_video_id_by_external_id(video_id)
-            print(f"Blurred video ID: {blurred_video_id}")
-
+        # Placeholder logic
+        video = await Video.find_one({"video_id": event.video_id})
+        if video:
             completed_event = VideoBlurCompletedEvent(
-                video_analysis_id=1,
-                video_id=event.video_id,
-                report_id=event.report_id,
                 event_id=event.event_id,
-                success=True,
-                blurred_video_uri="test",
+                blurred_video_uri=video.processed_video_uri,
             )
             self.producer.publish("FaceBlurred", completed_event)
+        # try:
+        #     video_indexer = self._get_video_indexer_client()
 
-        except Exception as e:
-            print(f"Failed to blur faces in video: {str(e)}")
+        #     # Get the original video URL and parse it for the path
+        #     video = await Video.find_one({"video_id": event.video_id})
+        #     video_url = video.original_video_uri
 
-    async def _handle_analysis_completed(self, event: VideoAnalysisCompletedEvent):
-        """Handle video analysis completed event."""
-        try:
-            print(f"Processing analysis completed event for video: {event.video_id}")
-            # Import PolicyHandler here to avoid circular import
-            from app.services.policy_handler import PolicyHandler
+        #     # Extract the original path and add '_blurred' before the extension
+        #     # Example: if path is 'folder/video.mp4' -> 'folder/video_blurred.mp4'
+        #     original_path = video_url.split("?")[
+        #         0
+        #     ]  # Remove any SAS token or query params
+        #     path_without_ext = original_path.rsplit(".", 1)[0]
+        #     extension = original_path.rsplit(".", 1)[1]
+        #     output_path = f"{path_without_ext}_blurred.{extension}"
 
-            policy_handler = PolicyHandler()
+        #     # Upload video to Video Indexer using URL
+        #     video_id = await video_indexer.upload_video(
+        #         video_url=video_url,
+        #         privacy_mode="Private",
+        #         video_name=f"{event.video_id}.mp4",
+        #     )
 
-            # Process the event using policy handler
-            result = await policy_handler.handle_event(
-                "video_analysis_completed", event.model_dump()
-            )
-            print(f"Policy handler result: {result}")
+        #     # Wait for video processing to complete
+        #     await video_indexer.wait_for_index_processing(video_id)
+        #     print("Video processing completed")
 
-            if result["success"]:
-                print(f"Analysis completed successfully for video {result['video_id']}")
-            else:
-                print(
-                    f"Analysis failed for video {result['video_id']}: {result.get('error')}"
-                )
+        #     # Get video with face blurring and save to same location
+        #     job_id = await video_indexer.blur_faces(
+        #         video_id, video_name=f"{event.video_id}_blurred"
+        #     )
+        #     print(f"Face blurring job started: {job_id}")
 
-        except Exception as e:
-            print(f"Error processing analysis completed event: {str(e)}")
+        #     await video_indexer.wait_for_job(job_id)
+
+        #     print("Face blurring completed")
+
+        #     # Clean up the video from Video Indexer
+        #     # await video_indexer.delete_video(video_id)
+        #     blurred_video_id = await video_indexer.get_video_id_by_external_id(video_id)
+        #     print(f"Blurred video ID: {blurred_video_id}")
+
+        #     completed_event = VideoBlurCompletedEvent(
+        #         video_analysis_id=1,
+        #         video_id=event.video_id,
+        #         report_id=event.report_id,
+        #         event_id=event.event_id,
+        #         success=True,
+        #         blurred_video_uri="test",
+        #     )
+        #     self.producer.publish("FaceBlurred", completed_event)
+
+        # except Exception as e:
+        #     print(f"Failed to blur faces in video: {str(e)}")
+
+    # async def _handle_analysis_completed(self, event: VideoAnalysisCompletedEvent):
+    #     """Handle video analysis completed event."""
+    #     try:
+    #         print(f"Processing analysis completed event for video: {event.video_id}")
+    #         # Import PolicyHandler here to avoid circular import
+    #         from app.services.policy_handler import PolicyHandler
+
+    #         policy_handler = PolicyHandler()
+
+    #         # Process the event using policy handler
+    #         result = await policy_handler.handle_event(
+    #             "video_analysis_completed", event.model_dump()
+    #         )
+    #         print(f"Policy handler result: {result}")
+
+    #         if result["success"]:
+    #             print(f"Analysis completed successfully for video {result['video_id']}")
+    #         else:
+    #             print(
+    #                 f"Analysis failed for video {result['video_id']}: {result.get('error')}"
+    #             )
+
+    #     except Exception as e:
+    #         print(f"Error processing analysis completed event: {str(e)}")
 
     def _get_video_indexer_client(self) -> VideoIndexerClient:
         """Get an instance of the Video Indexer client."""

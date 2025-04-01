@@ -65,11 +65,10 @@ class VideoAnalysisReport(Document):
     report_id: int
     tags: List[VideoAnalysisTag] = []
     frame_urls: List[str] = []
-    frame_count: int = 0
     status: VideoStatus = VideoStatus.PENDING
-    created_at: datetime = Field(default_factory=datetime.utcnow)
     openai_analysis: Optional[dict] = None
-    azure_analysis: Optional[dict] = None
+    summary: Optional[str] = ""
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Settings:
         name = "video_analysis_reports"

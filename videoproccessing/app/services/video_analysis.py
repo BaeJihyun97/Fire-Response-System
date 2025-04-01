@@ -20,12 +20,19 @@ class VideoAnalysisService:
         self.settings = get_settings()
         self.storage = AzureBlobStorage()
         self.frame_size = (640, 480)  # Target frame size
-        self.max_frames = 2  # Maximum number of frames to extract
+        self.max_frames = 20  # Maximum number of frames to extract
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
     async def analyze_video(self, video: Video) -> Optional[VideoAnalysisReport]:
         """Analyze a video and extract frames."""
+        # Create analysis report
+        report = VideoAnalysisReport(
+            video_id=video.video_id,
+            report_id=video.report_id,
+        )
+        report.video_analysis_id = await VideoAnalysisReport.get_next_sequence()
+        await report.save()
         try:
             # Create a temporary directory for frame storage
             with tempfile.TemporaryDirectory() as temp_dir:
@@ -39,15 +46,6 @@ class VideoAnalysisService:
                 if not frames:
                     print("No frames extracted from video")
                     return None
-
-                # Create analysis report
-                report = VideoAnalysisReport(
-                    video_id=video.video_id,
-                    report_id=video.report_id,
-                    frame_count=len(frames),
-                )
-                report.video_analysis_id = await VideoAnalysisReport.get_next_sequence()
-                await report.save()
 
                 # Upload frames to storage
                 encoded_frames = []
@@ -72,6 +70,8 @@ class VideoAnalysisService:
 
         except Exception as e:
             print(f"Error analyzing video: {str(e)}")
+            report.status = VideoStatus.FAILED
+            await report.save()
             return None
 
     def _extract_frames(self, video_path: str) -> List[np.ndarray]:

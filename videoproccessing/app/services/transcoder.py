@@ -8,7 +8,10 @@ from pathlib import Path
 class VideoTranscoder:
 
     async def transcode_video(
-        self, file_content: bytes, video_id: str
+        self,
+        file_content: bytes,
+        video_id: str,
+        height: int = 480,
     ) -> Tuple[bytes, str]:
         """
         Transcode video to 480p 30fps.
@@ -18,7 +21,7 @@ class VideoTranscoder:
         with tempfile.NamedTemporaryFile(
             suffix=".mp4", delete=False
         ) as input_temp, tempfile.NamedTemporaryFile(
-            suffix="_480p.mp4", delete=False
+            suffix=f"_{height}p.mp4", delete=False
         ) as output_temp:
 
             try:
@@ -28,7 +31,7 @@ class VideoTranscoder:
 
                 # Transcode the video using ffmpeg
                 stream = ffmpeg.input(input_temp.name)
-                stream = ffmpeg.filter(stream, "scale", width=-1, height=480)
+                stream = ffmpeg.filter(stream, "scale", width=-1, height=height)
                 stream = ffmpeg.output(
                     stream,
                     output_temp.name,
@@ -64,7 +67,7 @@ class VideoTranscoder:
                     output_data = f.read()
 
                 # Generate output filename using video_id
-                output_filename = f"{video_id}_480p.mp4"
+                output_filename = f"{video_id}_{height}p.mp4"
 
                 return output_data, output_filename
 

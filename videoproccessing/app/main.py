@@ -18,21 +18,26 @@ from contextlib import asynccontextmanager
 
 from app.core.config import Settings, get_settings
 from app.models.video import Counter, Video, VideoAnalysisReport
-from app.schemas.events import VideoAnalysisCompletedEvent, TOPICS, VideoStoredEvent
+from app.schemas.events import (
+    VideoAnalysisCompletedEvent,
+    VideoStoredEvent,
+    VideoAnalysisRequestedEvent,
+)
 from app.messaging.kafka import KafkaProducer, KafkaConsumer
 from app.services.video_analysis import VideoAnalysisService
 from app.services.video_manager import VideoManager
-
-
-class VideoUploadRequest(BaseModel):
-    video_url: str
-    system_id: str
 
 
 class VideoUploadResponse(BaseModel):
     video_id: int
     original_video_uri: str
     status: str
+
+
+class VideoAnalysisRequest(BaseModel):
+    report_id: int
+    event_id: int
+    user_id: int
 
 
 # Initialize services
@@ -153,7 +158,6 @@ async def upload_video(
             original_video_uri=video.original_video_uri,
             encoded_video_uri=video.processed_video_uri,
         )
-
         kafka_producer.publish("VideoSaved", event)
 
         return VideoUploadResponse(
@@ -167,83 +171,110 @@ async def upload_video(
         await file.close()
 
 
-@app.get("/videos/{video_id}", response_model=Video)
-async def get_video(video_id: str):
-    """Get video information."""
-    video = await Video.find_one({"video_id": video_id})
-    if not video:
-        raise HTTPException(status_code=404, detail="Video not found")
-    return video
+# @app.get("/videos/{video_id}", response_model=Video)
+# async def get_video(video_id: str):
+#     """Get video information."""
+#     video = await Video.find_one({"video_id": video_id})
+#     if not video:
+#         raise HTTPException(status_code=404, detail="Video not found")
+#     return video
 
 
-@app.delete("/videos/{video_id}")
-async def delete_video(video_id: str):
-    """Delete a video and its associated files."""
-    video = await Video.find_one({"video_id": video_id})
-    if not video:
-        raise HTTPException(status_code=404, detail="Video not found")
+# @app.delete("/videos/{video_id}")
+# async def delete_video(video_id: str):
+#     """Delete a video and its associated files."""
+#     video = await Video.find_one({"video_id": video_id})
+#     if not video:
+#         raise HTTPException(status_code=404, detail="Video not found")
 
-    success = await video_manager.delete_video(video)
-    if not success:
-        raise HTTPException(status_code=500, detail="Failed to delete video")
+#     success = await video_manager.delete_video(video)
+#     if not success:
+#         raise HTTPException(status_code=500, detail="Failed to delete video")
 
-    return {"message": "Video deleted successfully"}
+#     return {"message": "Video deleted successfully"}
 
 
+# TODO
 @app.post("/videos/{video_id}/analyze")
-async def analyze_video(video_id: str, background_tasks: BackgroundTasks):
+async def analyze_video(
+    video_id: int, request: VideoAnalysisRequest, background_tasks: BackgroundTasks
+):
     """Trigger video analysis for a specific video."""
     video = await Video.find_one({"video_id": video_id})
     if not video:
         raise HTTPException(status_code=404, detail="Video not found")
 
-    # Create analysis report
-    report = VideoAnalysisReport(video_id=video_id)
-    await report.save()
+    event = VideoAnalysisRequestedEvent(
+        video_id=video_id,
+        report_id=request.report_id,
+        event_id=request.event_id,
+        user_id=request.user_id,
+    )
 
     # Start analysis in background
-    background_tasks.add_task(process_video_analysis, video, report)
+    background_tasks.add_task(process_video_analysis, event)
 
-    return {"message": "Video analysis started", "report_id": report.report_id}
-
-
-@app.get("/videos/{video_id}/analysis", response_model=List[VideoAnalysisReport])
-async def get_video_analysis(video_id: str):
-    """Get all analysis reports for a specific video."""
-    reports = await VideoAnalysisReport.find({"video_id": video_id}).to_list()
-    if not reports:
-        raise HTTPException(status_code=404, detail="No analysis reports found")
-    return reports
+    return {"message": "Video analysis started", "video_id": video_id}
 
 
-async def process_video_analysis(video: Video, report: VideoAnalysisReport):
-    """Background task to process video analysis."""
+# @app.get("/videos/{video_id}/analysis", response_model=List[VideoAnalysisReport])
+# async def get_video_analysis(video_id: str):
+#     """Get all analysis reports for a specific video."""
+#     reports = await VideoAnalysisReport.find({"video_id": video_id}).to_list()
+#     if not reports:
+#         raise HTTPException(status_code=404, detail="No analysis reports found")
+#     return reports
+
+
+async def process_video_analysis(event: VideoAnalysisRequestedEvent):
+    """Handle video analysis requested event."""
     try:
-        updated_report = await video_analysis_service.analyze_video(video)
+        print(f"Processing analysis requested event for video: {event.video_id}")
+        from app.services.policy_handler import PolicyHandler
 
-        if updated_report:
-            event = VideoAnalysisCompletedEvent(
-                video_id=video.video_id, report_id=report.report_id, success=True
-            )
+        policy_handler = PolicyHandler()
+
+        # Process the event using policy handler
+        result = await policy_handler.handle_event(
+            "video_analysis_requested", event.model_dump()
+        )
+        print(f"Policy handler result: {result}")
+
+        if result["success"]:
+            if result["fire_detected"]:
+                # Publish analysis completed event
+                completed_event = VideoAnalysisCompletedEvent(
+                    video_analysis_id=result["video_analysis_id"],
+                    video_id=event.video_id,
+                    report_id=event.report_id,
+                    event_id=event.event_id,
+                    success=result["success"],
+                    fire_detected=result["fire_detected"],
+                )
+                kafka_producer.publish("VideoAnalyzed", completed_event)
         else:
-            event = VideoAnalysisCompletedEvent(
-                video_id=video.video_id,
-                report_id=report.report_id,
+            # Publish failed event
+            failed_event = VideoAnalysisCompletedEvent(
+                video_analysis_id=None,
+                video_id=event.video_id,
+                report_id=event.report_id,
+                event_id=event.event_id,
                 success=False,
-                error_message="Analysis failed",
+                fire_detected=False,
             )
-
-        kafka_producer.publish(TOPICS["video_analysis_completed"], event)
+            kafka_producer.publish("VideoAnalysisFailed", failed_event)
 
     except Exception as e:
-        print(f"Error processing video analysis: {str(e)}")
-        event = VideoAnalysisCompletedEvent(
-            video_id=video.video_id,
-            report_id=report.report_id,
+        print(f"Error processing analysis requested event: {str(e)}")
+        failed_event = VideoAnalysisCompletedEvent(
+            video_analysis_id=None,
+            video_id=event.video_id,
+            report_id=event.report_id,
+            event_id=event.event_id,
             success=False,
-            error_message=str(e),
+            fire_detected=False,
         )
-        kafka_producer.publish(TOPICS["video_analysis_completed"], event)
+        kafka_producer.publish("VideoAnalysisFailed", failed_event)
 
 
 if __name__ == "__main__":

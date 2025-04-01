@@ -57,10 +57,8 @@ class VideoAnalysisCompletedEvent(BaseModel):
 
 
 class VideoBlurCompletedEvent(BaseModel):
-    video_analysis_id: int
-    report_id: int
+    event_id: int
     blurred_video_uri: str
-    success: bool
     timestamp: datetime = datetime.utcnow()
 
     model_config = {
