@@ -38,7 +38,7 @@
             </router-link>
             
             <div class="h-8 w-8 rounded-full bg-gray-200 overflow-hidden">
-              <img src="https://placehold.co/32x32" alt="프로필" class="h-full w-full object-cover" />
+              <img src="https://ui-avatars.com/api/?name=Admin&background=0D9488&color=fff" alt="프로필" class="h-full w-full object-cover" />
             </div>
           </div>
         </div>
@@ -169,7 +169,7 @@
                           </div>
                           <div class="flex items-center text-xs text-gray-400 mt-1">
                             <Clock class="h-3 w-3 mr-1" />
-                            {{ report.time }}
+                            {{ formatTime(report.timestamp) }}
                           </div>
                         </div>
                       </div>
@@ -183,7 +183,7 @@
                         >
                           {{ report.status }}
                         </span>
-                        <router-link :to="`/admin/report/${report.id}`">
+                        <router-link :to="`/report/${report.id}`">
                           <button class="px-3 py-1 bg-blue-500 text-white rounded-md text-sm">보기</button>
                         </router-link>
                       </div>
@@ -223,14 +223,13 @@
                     <div class="mt-3 pt-3 border-t border-gray-100 grid grid-cols-3 gap-3">
                       <div>
                         <label class="block text-xs text-gray-500 mb-1">화재 상태 변경</label>
-                        <select 
-                          v-model="report.status" 
-                          class="w-full text-sm border border-gray-300 rounded-md p-1.5"
-                          @change="handleStatusChange(report)"
+                        <button 
+                          @click="handleStatusChange(report)" 
+                          class="w-full py-1.5 bg-red-100 text-red-700 border border-red-300 rounded-md text-sm hover:bg-red-200 transition-colors flex items-center justify-center"
                         >
-                          <option value="진행 중">진행 중</option>
-                          <option value="종결">종결</option>
-                        </select>
+                          <XCircle class="h-4 w-4 mr-1" />
+                          종결
+                        </button>
                       </div>
                       <div>
                         <label class="block text-xs text-gray-500 mb-1">소방관 확인</label>
@@ -304,7 +303,7 @@
                           </div>
                           <div class="flex items-center text-xs text-gray-400 mt-1">
                             <Clock class="h-3 w-3 mr-1" />
-                            {{ report.time }}
+                            {{ formatTime(report.timestamp) }}
                           </div>
                         </div>
                       </div>
@@ -313,7 +312,7 @@
                           <AlertTriangle class="h-4 w-4 text-red-500 mr-1" />
                           <span class="text-sm font-medium">{{ report.dangers }} 위험해요</span>
                         </div>
-                        <router-link :to="`/admin/report/${report.id}`">
+                        <router-link :to="`/report/${report.id}`">
                           <button class="px-3 py-1 bg-blue-500 text-white rounded-md text-sm">보기</button>
                         </router-link>
                       </div>
@@ -423,7 +422,7 @@
                           </div>
                           <div class="flex items-center text-xs text-gray-400 mt-1">
                             <Clock class="h-3 w-3 mr-1" />
-                            {{ report.closedTime || report.time }}
+                            {{ formatTime(report.timestamp) }}
                           </div>
                         </div>
                       </div>
@@ -437,7 +436,7 @@
                         >
                           {{ report.isDeleted ? '오보 처리됨' : '종결' }}
                         </span>
-                        <router-link :to="`/admin/report/${report.id}`">
+                        <router-link :to="`/report/${report.id}`">
                           <button class="px-3 py-1 bg-blue-500 text-white rounded-md text-sm">보기</button>
                         </router-link>
                       </div>
@@ -696,107 +695,105 @@ const router = useRouter();
 const activeTab = ref('active');
 const showFullRiskMap = ref(false);
 
-// 확인된 화재 데이터
+// 진행 중인 화재 제보
 const activeReports = ref([
   {
-    id: "1",
-    username: "소방지킴이",
-    userAvatar: "https://placehold.co/40x40",
-    location: "강남역, 서울",
-    time: "5분 전",
-    riskLevel: "높음",
-    status: "진행 중",
+    id: '1',
+    coordinates: { lat: 37.498095, lng: 127.027610 },
+    timestamp: '2024-03-31T14:30:00',
+    status: '진행 중',
+    isFire: true,
+    riskLevel: '높음',
     verified: true,
-    confirmedByFireDept: true,
-    confirmedAt: new Date().toISOString(),
-    videoUrl: "https://team05sa.blob.core.windows.net/videos/38/38.mp4", // 샘플 비디오 URL 추가
-    imageUrl: "https://placehold.co/600x400"
+    metadata: {
+      likes: 45,
+      comments: 12,
+      videoUrl: 'https://team05sa.blob.core.windows.net/videos/38/38.mp4',
+      imageUrl: 'https://example.com/image1.jpg'
+    }
   },
   {
-    id: "2",
-    username: "안전제일",
-    userAvatar: "https://placehold.co/40x40",
-    location: "여의도 공원, 서울",
-    time: "15분 전",
-    riskLevel: "중간",
-    status: "진행 중",
+    id: '2',
+    coordinates: { lat: 37.526120, lng: 126.925771 },
+    timestamp: '2024-03-31T15:00:00',
+    status: '진행 중',
+    isFire: true,
+    riskLevel: '중간',
     verified: true,
-    confirmedByFireDept: false,
-    videoUrl: null, // 비디오 없음
-    imageUrl: "https://placehold.co/600x400"
+    metadata: {
+      likes: 32,
+      comments: 8,
+      videoUrl: 'https://team05sa.blob.core.windows.net/videos/39/39.mp4',
+      imageUrl: 'https://example.com/image2.jpg'
+    }
   }
 ]);
 
-// 검토 필요 제보 데이터
+// 검토 중인 제보 (likes가 50개 이상)
 const pendingReports = ref([
   {
-    id: "3",
-    username: "시민제보자",
-    userAvatar: "https://placehold.co/40x40",
-    location: "홍대 앞, 서울",
-    time: "30분 전",
-    dangers: 67,
+    id: '3',
+    coordinates: { lat: 37.566535, lng: 126.977969 },
+    timestamp: new Date(Date.now() - 600000).toISOString(), // 10분 전
+    status: '진행 중',
+    isFire: false,
+    riskLevel: '낮음',
     verified: false,
-    videoUrl: "https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4", // 샘플 비디오 URL 추가
-    imageUrl: "https://placehold.co/600x400"
+    metadata: {
+      likes: 67,
+      comments: 12,
+      videoUrl: '',
+      imageUrl: 'https://placehold.co/600x400'
+    }
   },
   {
-    id: "4",
-    username: "동네지킴이",
-    userAvatar: "https://placehold.co/40x40",
-    location: "강동구 천호동, 서울",
-    time: "1시간 전",
-    dangers: 92,
+    id: '4',
+    coordinates: { lat: 37.538617, lng: 127.094454 },
+    timestamp: new Date(Date.now() - 3600000).toISOString(), // 1시간 전
+    status: '진행 중',
+    isFire: false,
+    riskLevel: '낮음',
     verified: false,
-    videoUrl: null,
-    imageUrl: "https://placehold.co/600x400"
+    metadata: {
+      likes: 89,
+      comments: 23,
+      videoUrl: '',
+      imageUrl: 'https://placehold.co/400x200'
+    }
   }
 ]);
 
-// 종결된 이벤트 데이터
+// 종결된 화재 제보
 const closedReports = ref([
   {
-    id: "5",
-    username: "안전지킴이",
-    userAvatar: "https://placehold.co/40x40",
-    location: "서초구 서초동, 서울",
-    time: "2시간 전",
-    closedTime: "30분 전",
-    riskLevel: "중간",
-    status: "종결",
+    id: '5',
+    coordinates: { lat: 37.566535, lng: 126.977969 },
+    timestamp: '2024-03-30T10:00:00',
+    status: '종료',
+    isFire: true,
+    riskLevel: '높음',
     verified: true,
-    confirmedByFireDept: true, // 소방관 확인 여부
-    confirmedAt: new Date(Date.now() - 3600000).toISOString(), // 소방관 확인 시간 (1시간 전)
-    closeReason: "화재 완전 진화 완료. 현장 안전 확보됨.",
-    videoUrl: "https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4",
-    imageUrl: "https://placehold.co/600x400"
+    metadata: {
+      likes: 89,
+      comments: 34,
+      videoUrl: '',
+      imageUrl: 'https://example.com/image5.jpg'
+    }
   },
   {
-    id: "6",
-    username: "시민제보자",
-    userAvatar: "https://placehold.co/40x40",
-    location: "마포구 합정동, 서울",
-    time: "3시간 전",
-    closedTime: "1시간 전",
-    isDeleted: true,
-    closeReason: "현장 확인 결과 화재가 아닌 것으로 판명. 요리 과정에서 발생한 연기로 확인됨.",
-    videoUrl: null,
-    imageUrl: "https://placehold.co/600x400"
-  },
-  {
-    id: "7",
-    username: "동네지킴이",
-    userAvatar: "https://placehold.co/40x40",
-    location: "송파구 잠실동, 서울",
-    time: "어제",
-    closedTime: "어제",
-    riskLevel: "높음",
-    status: "종결",
+    id: '6',
+    coordinates: { lat: 37.538617, lng: 127.094454 },
+    timestamp: '2024-03-29T15:30:00',
+    status: '종료',
+    isFire: true,
+    riskLevel: '중간',
     verified: true,
-    confirmedByFireDept: false, // 소방관 확인 여부
-    closeReason: "화재 진화 완료. 인명 피해 없음. 재산 피해 조사 중.",
-    videoUrl: null,
-    imageUrl: "https://placehold.co/600x400"
+    metadata: {
+      likes: 56,
+      comments: 18,
+      videoUrl: '',
+      imageUrl: 'https://example.com/image6.jpg'
+    }
   }
 ]);
 
@@ -808,6 +805,51 @@ const statusChangeNotification = ref('');
 const currentReport = ref(null);
 const changeType = ref(''); // 'status', 'delete', 'confirm', 'false', 'moreInfo', 'restore', 'firefighter'
 
+// 위치 정보 가져오기
+const loadLocationInfo = async (report) => {
+  try {
+    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${report.coordinates.lat}&lon=${report.coordinates.lng}`);
+    const data = await response.json();
+    
+    if (data.address) {
+      // 주소 정보 조합
+      const address = [
+        data.address.road,
+        data.address.building,
+        data.address.suburb
+      ].filter(Boolean).join(', ');
+      
+      report.location = address || '위치 정보 없음';
+    } else {
+      report.location = '위치 정보 없음';
+    }
+  } catch (error) {
+    console.error('위치 정보 로딩 실패:', error);
+    report.location = '위치 정보 없음';
+  }
+};
+
+// 시간 포맷팅 함수
+const formatTime = (timestamp) => {
+  if (!timestamp) return '';
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diff = now - date;
+  
+  // 1분 미만
+  if (diff < 60000) return '방금 전';
+  // 1시간 미만
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}분 전`;
+  // 24시간 미만
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}시간 전`;
+  // 그 이상
+  return date.toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
+
 // 화재 상태 변경 처리
 const handleStatusChange = (report) => {
   currentReport.value = report;
@@ -815,12 +857,12 @@ const handleStatusChange = (report) => {
   statusModalTitle.value = '화재 상태 변경';
   showStatusModal.value = true;
   
+  // 상태를 종료로 변경하고 종결된 이벤트 탭으로 전환
+  report.status = '종료';
+  activeTab.value = 'closed';
+  
   // 상태에 따른 기본 알림 메시지 설정
-  if (report.status === '종결') {
-    statusChangeNotification.value = `화재 #${report.id}가 종결 처리되었습니다.`;
-  } else {
-    statusChangeNotification.value = `화재 #${report.id}의 상태가 "${report.status}"(으)로 변경되었습니다.`;
-  }
+  statusChangeNotification.value = `화재 #${report.id}가 종결 처리되었습니다.`;
 };
 
 // 소방관 확인 토글
@@ -908,23 +950,16 @@ const confirmStatusChange = () => {
   if (!currentReport.value) return;
   
   const now = new Date();
-  const formattedTime = '방금 전'; // 실제로는 시간 포맷팅 로직 필요
+  const formattedTime = formatTime(now);
   
   // 상태 변경 타입에 따른 처리
   if (changeType.value === 'confirm') {
     // 제보를 확인된 화재로 변경
     const newFireReport = {
-      id: currentReport.value.id,
-      username: currentReport.value.username,
-      userAvatar: currentReport.value.userAvatar,
-      location: currentReport.value.location,
-      time: currentReport.value.time,
-      riskLevel: "중간", // 기본값
+      ...currentReport.value,
+      isFire: true,
       status: "진행 중",
-      verified: true,
-      confirmedByFireDept: false, // 소방관 확인은 기본적으로 false
-      videoUrl: currentReport.value.videoUrl, // 비디오 URL 유지
-      imageUrl: currentReport.value.imageUrl // 이미지 URL 유지
+      verified: true
     };
     
     // 확인된 화재 목록에 추가
@@ -967,20 +1002,31 @@ const confirmStatusChange = () => {
     // 활성 화재 목록에서 제거
     activeReports.value = activeReports.value.filter(report => report.id !== currentReport.value.id);
     
-  } else if (changeType.value === 'status' && currentReport.value.status === '종결') {
-    // 화재 상태를 종결로 변경
-    const closedReport = {
-      ...currentReport.value,
-      status: '종결',
-      closeReason: statusChangeReason.value,
-      closedTime: formattedTime
-    };
+    // 종결된 이벤트 탭으로 전환
+    activeTab.value = 'closed';
     
-    // 종결된 이벤트 목록에 추가
-    closedReports.value.unshift(closedReport);
-    
-    // 활성 화재 목록에서 제거
-    activeReports.value = activeReports.value.filter(report => report.id !== currentReport.value.id);
+  } else if (changeType.value === 'status') {
+    if (currentReport.value.status === '종료') {
+      // 화재 상태를 종결로 변경
+      const closedReport = {
+        ...currentReport.value,
+        status: '종료',
+        closeReason: statusChangeReason.value,
+        closedTime: formattedTime
+      };
+      
+      // 종결된 이벤트 목록에 추가
+      closedReports.value.unshift(closedReport);
+      
+      // 활성 화재 목록에서 제거
+      activeReports.value = activeReports.value.filter(report => report.id !== currentReport.value.id);
+      
+      // 종결된 이벤트 탭으로 전환
+      activeTab.value = 'closed';
+    } else {
+      // 상태를 진행 중으로 변경
+      currentReport.value.status = '진행 중';
+    }
     
   } else if (changeType.value === 'restore') {
     // 종결된 이벤트를 다시 활성화
@@ -1028,8 +1074,14 @@ const navigateToFullRiskMap = () => {
 };
 
 // 컴포넌트 마운트 시 초기화
-onMounted(() => {
+onMounted(async () => {
   console.log('AdminPage 마운트됨');
+  
+  // 모든 제보의 위치 정보 로드
+  for (const report of [...activeReports.value, ...pendingReports.value, ...closedReports.value]) {
+    await loadLocationInfo(report);
+    report.time = formatTime(report.timestamp);
+  }
 });
 </script>
 

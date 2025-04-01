@@ -1,12 +1,17 @@
 <template>
-  <div class="bg-white rounded-xl shadow-soft overflow-hidden mb-4">
+  <div 
+    class="bg-white rounded-xl shadow-soft overflow-hidden mb-4 cursor-pointer hover:shadow-md transition-shadow duration-200"
+    @click="goToDetail"
+  >
     <!-- 헤더 -->
     <div class="p-4 flex items-center justify-between">
       <div class="flex items-center">
-        <img :src="fire.userAvatar" alt="프로필" class="w-10 h-10 rounded-full mr-3" />
         <div>
           <div class="flex items-center">
-            <h3 class="font-medium text-gray-900">{{ fire.username }}</h3>
+            <div class="h-6 w-6 rounded-full bg-gray-200 overflow-hidden mr-2">
+              <img src="https://ui-avatars.com/api/?name=Fire&background=0D9488&color=fff" alt="프로필" class="h-full w-full object-cover" />
+            </div>
+            <h3 class="font-medium text-gray-900">화재 #{{ fire.id }}</h3>
             <span v-if="fire.verified" class="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-800 border border-blue-200 rounded-full flex items-center">
               <Shield class="h-3 w-3 mr-1" />
               확인됨
@@ -16,7 +21,7 @@
             <MapPin class="h-3 w-3 mr-1" />
             <!-- 위치 클릭 가능하도록 수정 -->
             <button 
-              @click="showMap" 
+              @click.stop="showMap" 
               class="hover:text-primary-600 hover:underline"
               :disabled="isLoadingMap"
             >
@@ -27,26 +32,35 @@
               <span v-else>{{ displayLocation }}</span>
             </button>
             <span class="mx-1">•</span>
-            <span>{{ fire.time }}</span>
+            <span>{{ formatTime(fire.timestamp) }}</span>
           </div>
         </div>
       </div>
       
       <div class="flex items-center">
-        <span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full">{{ fire.distance }}</span>
+        <span 
+          class="mr-2 px-2 py-0.5 rounded-full text-xs"
+          :class="{
+            'bg-red-100 text-red-800': fire.riskLevel === '심각',
+            'bg-orange-100 text-orange-800': fire.riskLevel === '높음',
+            'bg-yellow-100 text-yellow-800': fire.riskLevel === '중간'
+          }"
+        >
+          {{ fire.riskLevel }}
+        </span>
       </div>
     </div>
     
     <!-- 미디어 (비디오 또는 이미지) -->
     <div class="relative">
       <!-- 비디오가 있으면 비디오 플레이어 표시 -->
-      <div v-if="fire.videoUrl" class="w-full h-96 overflow-hidden">
+      <div v-if="fire.metadata.videoUrl" class="w-full h-96 overflow-hidden">
         <VideoPlayer 
-          :videoUrl="fire.videoUrl" 
-          :posterUrl="fire.imageUrl"
+          :videoUrl="fire.metadata.videoUrl" 
+          :posterUrl="fire.metadata.imageUrl"
           :showControls="false"
           :muted="true"
-          @click="viewDetail"
+          @click.stop="viewDetail"
           class="w-full h-full object-contain"
         />
       </div>
@@ -54,10 +68,10 @@
       <!-- 비디오가 없으면 이미지 표시 -->
       <img 
         v-else 
-        :src="fire.imageUrl" 
+        :src="fire.metadata.imageUrl" 
         alt="화재 이미지" 
         class="w-full h-96 object-cover"
-        @click="viewDetail"
+        @click.stop="viewDetail"
       />
       
       <!-- 위험도 표시 - 위험도에 따라 색상 차별화 -->
@@ -71,7 +85,7 @@
       
       <!-- 비디오 표시 아이콘 -->
       <div 
-        v-if="fire.videoUrl" 
+        v-if="fire.metadata.videoUrl" 
         class="absolute bottom-3 left-3 bg-black bg-opacity-60 rounded-full p-1.5"
       >
         <Video class="h-4 w-4 text-white" />
@@ -80,7 +94,7 @@
     
     <!-- 내용 -->
     <div class="p-4">
-      <p class="text-gray-800 text-sm">{{ fire.description }}</p>
+      <p class="text-gray-800 text-sm">{{ fire.isFire ? '화재가 발생했습니다.' : '화재 의심 상황입니다.' }}</p>
       
       <!-- 액션 버튼 -->
       <div class="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-gray-100">
@@ -90,12 +104,12 @@
           :class="isConfirmed ? 'text-red-600' : 'text-gray-600'"
         >
           <AlertTriangle :class="['h-5 w-5 mr-1.5', isConfirmed ? 'fill-red-100' : '']" />
-          <span>위험해요 {{ fire.confirms }}</span>
+          <span>위험해요 {{ fire.metadata.likes }}</span>
         </button>
         
         <button @click.stop="openComments" class="flex items-center justify-center text-gray-600 text-sm font-medium py-1">
           <MessageSquare class="h-5 w-5 mr-1.5" />
-          <span>댓글 {{ fire.comments }}</span>
+          <span>댓글 {{ fire.metadata.comments }}</span>
         </button>
         
         <button @click.stop="shareReport" class="flex items-center justify-center text-gray-600 text-sm font-medium py-1">
@@ -135,20 +149,19 @@ const props = defineProps({
     type: Object,
     required: true,
     default: () => ({
-      // 기본값 설정
       id: '',
-      username: '',
-      userAvatar: '',
-      coordinates: { lat: 37.5665, lng: 126.9780 }, // 기본값 (서울시청)
-      time: '',
-      description: '',
-      imageUrl: '',
-      videoUrl: null, // 비디오 URL 추가
+      coordinates: { lat: 37.5665, lng: 126.9780 },
+      timestamp: '',
+      status: '진행 중',
+      isFire: false,
       riskLevel: '낮음',
-      distance: '',
-      confirms: 0,
-      comments: 0,
-      verified: false
+      verified: false,
+      metadata: {
+        likes: 0,
+        comments: 0,
+        videoUrl: null,
+        imageUrl: ''
+      }
     })
   }
 });
@@ -242,9 +255,9 @@ const confirmFire = () => {
   isConfirmed.value = !isConfirmed.value;
   // 실제로는 API 호출을 통해 서버에 업데이트
   if (isConfirmed.value) {
-    props.fire.confirms++;
+    props.fire.metadata.likes++;
   } else {
-    props.fire.confirms--;
+    props.fire.metadata.likes--;
   }
 };
 
@@ -254,7 +267,7 @@ const shareReport = () => {
   if (navigator.share) {
     navigator.share({
       title: `화재 제보: ${displayLocation.value}`,
-      text: props.fire.description,
+      text: props.fire.isFire ? '화재가 발생했습니다.' : '화재 의심 상황입니다.',
       url: window.location.href + `/report/${props.fire.id}`
     }).catch(err => {
       console.error('공유 실패:', err);
@@ -283,6 +296,32 @@ const showMap = () => {
   } finally {
     isLoadingMap.value = false;
   }
+};
+
+// 시간 포맷팅 함수
+const formatTime = (timestamp) => {
+  if (!timestamp) return '';
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diff = now - date;
+  
+  // 1분 미만
+  if (diff < 60000) return '방금 전';
+  // 1시간 미만
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}분 전`;
+  // 24시간 미만
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}시간 전`;
+  // 그 이상
+  return date.toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
+
+// 상세 페이지로 이동
+const goToDetail = () => {
+  router.push(`/report/${props.fire.id}`);
 };
 </script>
 

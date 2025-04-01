@@ -24,74 +24,44 @@ import {
   User
 } from 'lucide-vue-next';
 
-// 종결된 이벤트 데이터 (실제로는 API에서 가져옴)
-const closedEvents = ref([
+// 종결된 화재 제보
+const closedReports = ref([
   {
-    id: "5",
-    username: "안전지킴이",
-    userAvatar: "https://placehold.co/40x40",
-    location: "서초구 서초동, 서울",
-    time: "2시간 전",
-    closedTime: "30분 전",
-    riskLevel: "중간",
-    status: "종결",
+    id: '5',
+    coordinates: { lat: 37.566535, lng: 126.977969 },
+    timestamp: '2024-03-31T13:00:00',
+    status: '종결',
+    isFire: true,
+    riskLevel: '높음',
     verified: true,
-    confirmedByFireDept: true,
-    confirmedAt: new Date(Date.now() - 3600000).toISOString(),
-    closeReason: "화재 완전 진화 완료. 현장 안전 확보됨."
+    metadata: {
+      likes: 45,
+      comments: 12,
+      videoUrl: 'https://team05sa.blob.core.windows.net/videos/38/38.mp4',
+      imageUrl: 'https://example.com/image1.jpg'
+    }
   },
   {
-    id: "6",
-    username: "시민제보자",
-    userAvatar: "https://placehold.co/40x40",
-    location: "마포구 합정동, 서울",
-    time: "3시간 전",
-    closedTime: "1시간 전",
-    isDeleted: true,
-    closeReason: "현장 확인 결과 화재가 아닌 것으로 판명. 요리 과정에서 발생한 연기로 확인됨."
-  },
-  {
-    id: "7",
-    username: "동네지킴이",
-    userAvatar: "https://placehold.co/40x40",
-    location: "송파구 잠실동, 서울",
-    time: "어제",
-    closedTime: "어제",
-    riskLevel: "높음",
-    status: "종결",
+    id: '6',
+    coordinates: { lat: 37.538617, lng: 127.094454 },
+    timestamp: '2024-03-31T12:30:00',
+    status: '종결',
+    isFire: true,
+    riskLevel: '중간',
     verified: true,
-    confirmedByFireDept: false,
-    closeReason: "화재 진화 완료. 인명 피해 없음. 재산 피해 조사 중."
-  },
-  {
-    id: "11",
-    username: "안전제일",
-    userAvatar: "https://placehold.co/40x40",
-    location: "강서구 화곡동, 서울",
-    time: "2일 전",
-    closedTime: "어제",
-    riskLevel: "심각",
-    status: "종결",
-    verified: true,
-    confirmedByFireDept: true,
-    closeReason: "화재 진화 완료. 인명 피해 없음. 건물 일부 손상."
-  },
-  {
-    id: "12",
-    username: "시민제보자",
-    userAvatar: "https://placehold.co/40x40",
-    location: "노원구 상계동, 서울",
-    time: "3일 전",
-    closedTime: "2일 전",
-    isDeleted: true,
-    closeReason: "오보로 확인됨. 인근 공사장 연기로 확인."
+    metadata: {
+      likes: 32,
+      comments: 8,
+      videoUrl: 'https://team05sa.blob.core.windows.net/videos/38/38.mp4',
+      imageUrl: 'https://example.com/image2.jpg'
+    }
   }
 ]);
 
 // 이벤트 재개
 const restoreEvent = (event) => {
   if (confirm(`${event.isDeleted ? '오보로 처리된 제보' : '종결된 화재'} #${event.id}를 재개하시겠습니까?`)) {
-    closedEvents.value = closedEvents.value.filter(e => e.id !== event.id);
+    closedReports.value = closedReports.value.filter(e => e.id !== event.id);
     console.log(`이벤트 #${event.id}가 재개되었습니다.`);
   }
 };
@@ -171,22 +141,22 @@ const restoreEvent = (event) => {
           <div class="flex justify-between items-center">
             <h2 class="font-semibold">종결된 이벤트</h2>
             <div class="flex items-center text-sm text-gray-500">
-              <span>총 {{ closedEvents.length }}개 이벤트</span>
+              <span>총 {{ closedReports.length }}개 이벤트</span>
             </div>
           </div>
         </div>
         
         <div class="p-4">
-          <div v-if="closedEvents.length === 0" class="text-center py-8 text-gray-500">
+          <div v-if="closedReports.length === 0" class="text-center py-8 text-gray-500">
             <Archive class="h-12 w-12 mx-auto mb-2 text-gray-400" />
             <p>종결된 이벤트가 없습니다.</p>
           </div>
           <div v-else class="space-y-4">
-            <div v-for="event in closedEvents" :key="event.id" class="flex flex-col p-3 bg-white rounded-lg border">
+            <div v-for="event in closedReports" :key="event.id" class="flex flex-col p-3 bg-white rounded-lg border">
               <div class="flex items-center justify-between">
                 <div class="flex items-center">
                   <div class="h-10 w-10 rounded-full bg-gray-200 overflow-hidden mr-3">
-                    <img :src="event.userAvatar" :alt="event.username" class="h-full w-full object-cover" />
+                    <img :src="event.metadata.imageUrl" :alt="event.id" class="h-full w-full object-cover" />
                   </div>
                   <div>
                     <div class="flex items-center">

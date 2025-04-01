@@ -141,8 +141,14 @@
                 type="text" 
                 class="w-full p-3 pr-10 border border-gray-300 rounded-lg" 
                 placeholder="화재 발생 위치"
+                readonly
               />
-              <MapPin class="absolute right-3 top-3 h-5 w-5 text-gray-400" />
+              <button 
+                @click="handleLocationClick"
+                class="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+              >
+                <MapPin class="h-5 w-5" />
+              </button>
             </div>
           </div>
           
@@ -154,37 +160,6 @@
               rows="3" 
               placeholder="화재 상황에 대한 설명을 입력해주세요"
             ></textarea>
-          </div>
-          
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">긴급도</label>
-            <div class="flex space-x-2">
-              <button 
-                v-for="level in ['낮음', '중간', '높음']" 
-                :key="level"
-                @click="reportData.urgency = level"
-                :class="[
-                  'flex-1 py-2 rounded-lg text-sm font-medium border',
-                  reportData.urgency === level 
-                    ? getUrgencyActiveClass(level)
-                    : 'border-gray-300 text-gray-700 bg-white'
-                ]"
-              >
-                {{ level }}
-              </button>
-            </div>
-          </div>
-          
-          <div class="flex items-center">
-            <input 
-              id="emergency" 
-              v-model="reportData.emergency" 
-              type="checkbox" 
-              class="h-4 w-4 text-primary-600 border-gray-300 rounded"
-            />
-            <label for="emergency" class="ml-2 text-sm text-gray-700">
-              이 상황은 긴급 대응이 필요합니다
-            </label>
           </div>
         </div>
         
@@ -250,13 +225,73 @@ const progressValue = computed(() => {
 
 // 제보 데이터
 const reportData = ref({
-  location: '',
-  description: '',
-  urgency: '중간',
-  emergency: false,
-  videoBlob: null,
-  timestamp: null
+  userId: 'user123', // 실제로는 로그인된 사용자의 ID를 사용
+  coordinates: null,
+  timestamp: null,
+  reportId: null,
+  description: ''
 });
+
+// 위치 정보 가져오기
+const loadLocationInfo = async (coordinates) => {
+  try {
+    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${coordinates.lat}&lon=${coordinates.lng}`);
+    const data = await response.json();
+    
+    if (data.address) {
+      // 주소 정보 조합
+      const address = [
+        data.address.road,
+        data.address.building,
+        data.address.suburb
+      ].filter(Boolean).join(', ');
+      
+      return address || '위치 정보 없음';
+    }
+    return '위치 정보 없음';
+  } catch (error) {
+    console.error('위치 정보 로딩 실패:', error);
+    return '위치 정보 없음';
+  }
+};
+
+// 현재 위치 가져오기
+const getCurrentLocation = () => {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('위치 정보를 지원하지 않는 브라우저입니다.'));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const coordinates = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+        
+        // 주소 변환
+        const address = await loadLocationInfo(coordinates);
+        reportData.value.coordinates = coordinates;
+        reportData.value.location = address;
+        resolve(coordinates);
+      },
+      (error) => {
+        reject(error);
+      }
+    );
+  });
+};
+
+// 현재 위치 버튼 클릭 처리
+const handleLocationClick = async () => {
+  try {
+    await getCurrentLocation();
+  } catch (error) {
+    console.error('위치 정보 가져오기 실패:', error);
+    alert('위치 정보를 가져올 수 없습니다. 위치 권한을 확인해주세요.');
+  }
+};
 
 // 카메라 초기화
 const initCamera = async () => {
@@ -392,20 +427,6 @@ const useRecording = () => {
   showReportForm.value = true;
 };
 
-// 긴급도에 따른 클래스
-const getUrgencyActiveClass = (level) => {
-  switch (level) {
-    case '낮음':
-      return 'border-green-500 bg-green-50 text-green-700';
-    case '중간':
-      return 'border-yellow-500 bg-yellow-50 text-yellow-700';
-    case '높음':
-      return 'border-red-500 bg-red-50 text-red-700';
-    default:
-      return 'border-gray-300 bg-white text-gray-700';
-  }
-};
-
 // 제보 제출
 const submitReport = async () => {
   if (!reportData.value.videoBlob) {
@@ -421,15 +442,14 @@ const submitReport = async () => {
   isSubmitting.value = true;
   
   try {
-    // 여기서 실제 API 호출을 통해 서버에 데이터를 전송합니다.
-    // FormData를 사용하여 영상과 함께 데이터 전송
+    // 제보 데이터 준비
     const formData = new FormData();
     formData.append('video', reportData.value.videoBlob, 'fire_report.webm');
-    formData.append('location', reportData.value.location);
+    formData.append('userId', reportData.value.userId);
+    formData.append('coordinates', JSON.stringify(reportData.value.coordinates));
+    formData.append('timestamp', new Date().toISOString());
+    formData.append('reportId', `report_${Date.now()}`); // 임시 reportId 생성
     formData.append('description', reportData.value.description);
-    formData.append('urgency', reportData.value.urgency);
-    formData.append('emergency', reportData.value.emergency);
-    formData.append('timestamp', reportData.value.timestamp);
     
     // 실제 API 호출 (여기서는 시뮬레이션)
     // const response = await fetch('/api/fire-reports', {

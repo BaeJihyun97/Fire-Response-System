@@ -380,9 +380,11 @@ const fitAllMarkersInView = () => {
       bounds.extend(userMarker.getPosition());
     }
     
-    // 마커가 없으면 서울 중심으로 설정
-    if (bounds.isEmpty()) {
-      bounds.extend(new window.naver.maps.LatLng(37.5665, 126.9780)); // 서울시청
+    // 마커가 하나도 없는 경우 (bounds가 비어있는 경우)
+    if (markers.length === 0 && !userMarker) {
+      // 서울 중심으로 기본 영역 설정
+      const seoulCenter = new window.naver.maps.LatLng(37.5665, 126.9780); // 서울시청
+      bounds.extend(seoulCenter);
       bounds.extend(new window.naver.maps.LatLng(37.5665 + 0.1, 126.9780 + 0.1));
     }
     

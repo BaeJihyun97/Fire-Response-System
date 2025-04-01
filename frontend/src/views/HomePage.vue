@@ -72,17 +72,17 @@
         <!-- 커뮤니티 제보 탭 -->
         <div v-if="activeTab === 'community'">
           <div class="space-y-6 mt-4">
-            <community-post-card 
-              v-for="post in communityPosts" 
-              :key="post.id" 
-              :post="post"
+            <fire-report-card 
+              v-for="fire in communityReports" 
+              :key="fire.id" 
+              :fire="fire"
             />
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 하단 네비게이션 바 - 검색 탭을 지도 탭으로 변경 -->
+    <!-- 하단 네비게이션 바 -->
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 shadow-lg">
       <div class="container mx-auto max-w-lg">
         <div class="flex justify-around items-center">
@@ -117,74 +117,78 @@
 import { ref, onMounted } from 'vue';
 import { AlertTriangle, Bell, Camera, Home, Map, Phone, RefreshCw, User } from 'lucide-vue-next';
 import FireReportCard from '../components/FireReportCard.vue';
-import CommunityPostCard from '../components/CommunityPostCard.vue';
 import AppHeader from '../components/AppHeader.vue';
+import { useRouter } from 'vue-router';
 
 const activeTab = ref('confirmed');
 const isRefreshing = ref(false);
+const router = useRouter();
 
 // 화재 제보 데이터
 const fireReports = ref([
   {
     id: '1',
-    username: '소방지킴이',
-    userAvatar: 'https://placehold.co/40x40',
-    coordinates: { lat: 37.498095, lng: 127.027610 }, // 강남역 좌표
-    time: '5분 전',
-    description: '상업 건물 3층에서 화재 발생. 연기가 심하게 나고 있습니다.',
-    imageUrl: 'https://placehold.co/600x400',
-    videoUrl: 'https://team05sa.blob.core.windows.net/videos/38/38.mp4', // 비디오 URL 추가
+    coordinates: { lat: 37.498095, lng: 127.027610 },
+    timestamp: '2025-03-31T23:30:00',
+    status: '진행 중',
+    isFire: true,
     riskLevel: '높음',
-    distance: '1.2km',
-    confirms: 128,
-    comments: 24,
-    verified: true
+    verified: true,
+    metadata: {
+      likes: 45,
+      comments: 12,
+      videoUrl: '',
+      imageUrl: 'https://example.com/image1.jpg'
+    }
   },
   {
-    id: "2",
-    username: "안전제일",
-    userAvatar: "https://placehold.co/40x40",
-    coordinates: { lat: 37.526120, lng: 126.925771 }, // 여의도 공원 좌표
-    time: "15분 전",
-    description: "공원 동쪽 입구 근처에서 작은 산불 발생. 소방차 출동 중입니다.",
-    riskLevel: "중간",
-    imageUrl: "https://placehold.co/400x200",
-    videoUrl: null, // 비디오 없음
-    distance: "3.5km",
-    confirms: 87,
-    comments: 15,
-    verified: true
+    id: '2',
+    coordinates: { lat: 37.526120, lng: 126.925771 },
+    timestamp: '2024-03-31T15:00:00',
+    status: '진행 중',
+    isFire: true,
+    riskLevel: '중간',
+    verified: true,
+    metadata: {
+      likes: 32,
+      comments: 8,
+      videoUrl: '',
+      imageUrl: 'https://example.com/image2.jpg'
+    }
   }
 ]);
 
 // 커뮤니티 제보 데이터
-const communityPosts = ref([
+const communityReports = ref([
   {
     id: '3',
-    username: '시민제보자',
-    userAvatar: 'https://placehold.co/40x40',
-    coordinates: { lat: 37.566535, lng: 126.977969 }, // 서울시청 좌표
-    time: '10분 전',
-    description: '남산타워 근처에서 연기가 보입니다. 화재인지 확인 부탁드립니다.',
-    imageUrl: 'https://placehold.co/600x400',
-    videoUrl: 'https://team05sa.blob.core.windows.net/videos/38/38.mp4', // 비디오 URL 추가
-    distance: '2.5km',
-    confirms: 45,
-    comments: 12
+    coordinates: { lat: 37.566535, lng: 126.977969 },
+    timestamp: new Date(Date.now() - 600000).toISOString(), // 10분 전
+    status: '진행 중',
+    isFire: false,
+    riskLevel: '낮음',
+    verified: false,
+    metadata: {
+      likes: 67,
+      comments: 12,
+      videoUrl: '',
+      imageUrl: 'https://placehold.co/600x400'
+    }
   },
   {
-    id: "4",
-    username: "동네지킴이",
-    userAvatar: "https://placehold.co/40x40",
-    coordinates: { lat: 37.538617, lng: 127.094454 }, // 강동구 천호동 좌표
-    time: "1시간 전",
-    description: "아파트 단지 근처에서 연기가 보입니다. 화재인지 확인 필요합니다.",
-    imageUrl: "https://placehold.co/400x200",
-    videoUrl: null, // 비디오 없음
-    distance: "8.7km",
-    confirms: 67,
-    comments: 23,
-    verified: false
+    id: '4',
+    coordinates: { lat: 37.538617, lng: 127.094454 },
+    timestamp: new Date(Date.now() - 3600000).toISOString(), // 1시간 전
+    status: '진행 중',
+    isFire: false,
+    riskLevel: '낮음',
+    verified: false,
+    metadata: {
+      likes: 89,
+      comments: 23,
+      videoUrl: '',
+      imageUrl: 'https://placehold.co/400x200'
+    }
   }
 ]);
 
@@ -206,7 +210,7 @@ const refreshData = async () => {
 onMounted(() => {
   console.log('HomePage 마운트됨');
   console.log('fireReports:', fireReports.value);
-  console.log('communityPosts:', communityPosts.value);
+  console.log('communityReports:', communityReports.value);
 });
 </script>
 
