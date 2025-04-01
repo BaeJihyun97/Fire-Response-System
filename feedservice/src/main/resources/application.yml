@@ -74,3 +74,9 @@ spring:
 post:
   reaction:
     threshold: 10
+
+---
+spring:
+  config:
+    import: optional:classpath:application-secret.yml
+
