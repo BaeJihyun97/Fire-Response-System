@@ -192,7 +192,7 @@ import {
   Loader
 } from 'lucide-vue-next';
 import { useNotificationStore } from '../stores/notificationStore';
-import { reportApi, videoApi } from '../services/api';
+import { reportApiService, videoApiService } from '../services/api';
 
 const router = useRouter();
 const notificationStore = useNotificationStore();
@@ -452,14 +452,14 @@ const submitReport = async () => {
     };
     
     // 제보 데이터 전송
-    const reportResponse = await reportApi.submitReport(reportPayload);
+    const reportResponse = await reportApiService.submitReport(reportPayload);
     const reportId = reportResponse.data.reportId;
     
     // 비디오 파일 생성
     const videoFile = new File([reportData.value.videoBlob], 'fire_report.mp4', { type: 'video/mp4' });
     
     // 비디오 업로드
-    await videoApi.uploadVideo(videoFile, reportId);
+    await videoApiService.uploadVideo(videoFile, reportId);
     
     // 알림 추가
     notificationStore.addNotification({
@@ -474,7 +474,12 @@ const submitReport = async () => {
     router.push('/report-success');
   } catch (error) {
     console.error('제보 제출 오류:', error);
-    alert('제보 제출 중 오류가 발생했습니다. 다시 시도해주세요.');
+    if (error.response) {
+      console.error('서버 응답:', error.response.data);
+      alert(`제보 제출 중 오류가 발생했습니다: ${error.response.data.message || '알 수 없는 오류'}`);
+    } else {
+      alert('제보 제출 중 오류가 발생했습니다. 다시 시도해주세요.');
+    }
   } finally {
     isSubmitting.value = false;
   }

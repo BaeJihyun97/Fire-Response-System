@@ -54,15 +54,22 @@
     <!-- 미디어 (비디오 또는 이미지) -->
     <div class="relative">
       <!-- 비디오가 있으면 비디오 플레이어 표시 -->
-      <div v-if="fire.metadata.videoUrl" class="w-full h-96 overflow-hidden">
-        <VideoPlayer 
-          :videoUrl="fire.metadata.videoUrl" 
-          :posterUrl="fire.metadata.imageUrl"
-          :showControls="false"
-          :muted="true"
-          @click.stop="viewDetail"
-          class="w-full h-full object-contain"
-        />
+      <div v-if="fire.metadata.videoUrl" class="relative aspect-video mb-4">
+        <video
+          v-if="!videoError"
+          :src="fire.metadata.videoUrl"
+          class="w-full h-full object-contain cursor-pointer"
+          @click="toggleVideo"
+          @error="handleVideoError"
+          controls
+          preload="metadata"
+        ></video>
+        <div v-else class="w-full h-full flex items-center justify-center bg-gray-100">
+          <div class="text-center">
+            <AlertCircle class="h-8 w-8 text-gray-400 mx-auto mb-2" />
+            <p class="text-sm text-gray-500">비디오를 로드할 수 없습니다</p>
+          </div>
+        </div>
       </div>
       
       <!-- 비디오가 없으면 이미지 표시 -->
@@ -136,8 +143,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { MapPin, AlertTriangle, MessageSquare, Share2, Shield, Video } from 'lucide-vue-next';
+import { ref, computed, onMounted, watch } from 'vue';
+import { MapPin, AlertTriangle, MessageSquare, Share2, Shield, Video, AlertCircle } from 'lucide-vue-next';
 import { useRouter } from 'vue-router';
 import CommentSection from './CommentSection.vue';
 import MapView from '../views/MapView.vue';
@@ -175,6 +182,8 @@ const showMapModal = ref(false);
 const isLoadingMap = ref(false);
 const isLoadingAddress = ref(true); // 초기에는 주소 로딩 중
 const formattedAddress = ref(null);
+const isPlaying = ref(false);
+const videoError = ref(false);
 
 // 위험도에 따른 클래스 계산
 const riskLevelClass = computed(() => {
@@ -322,6 +331,70 @@ const formatTime = (timestamp) => {
 // 상세 페이지로 이동
 const goToDetail = () => {
   router.push(`/report/${props.fire.id}`);
+};
+
+const handleVideoError = (error) => {
+  console.error('비디오 로드 에러:', {
+    error,
+    videoUrl: props.fire.metadata.videoUrl,
+    videoElement: error.target,
+    networkState: error.target?.networkState,
+    errorState: error.target?.error
+  });
+  videoError.value = true;
+};
+
+// 비디오 URL 유효성 검사 함수 추가
+const validateVideoUrl = (url) => {
+  try {
+    const videoUrl = new URL(url);
+    return videoUrl.protocol === 'https:';
+  } catch (e) {
+    console.error('비디오 URL 유효성 검사 실패:', e);
+    return false;
+  }
+};
+
+// 비디오 로드 전에 URL 검증
+const loadVideo = () => {
+  if (!props.fire.metadata.videoUrl) {
+    videoError.value = true;
+    return;
+  }
+
+  if (!validateVideoUrl(props.fire.metadata.videoUrl)) {
+    console.error('유효하지 않은 비디오 URL:', props.fire.metadata.videoUrl);
+    videoError.value = true;
+    return;
+  }
+
+  videoError.value = false;
+};
+
+// 컴포넌트 마운트 시 비디오 URL 검증
+onMounted(() => {
+  if (props.fire.metadata.videoUrl) {
+    loadVideo();
+  }
+});
+
+// 비디오 URL이 변경될 때마다 검증
+watch(() => props.fire.metadata.videoUrl, () => {
+  if (props.fire.metadata.videoUrl) {
+    loadVideo();
+  }
+});
+
+const toggleVideo = () => {
+  const video = document.querySelector('video');
+  if (video) {
+    if (isPlaying.value) {
+      video.pause();
+    } else {
+      video.play();
+    }
+    isPlaying.value = !isPlaying.value;
+  }
 };
 </script>
 

@@ -1,10 +1,26 @@
 import axios from 'axios';
 
-// API 기본 설정
-const api = axios.create({
-  baseURL: '/api',  // 프록시를 통해 요청
+// 이벤트 API 기본 설정
+const eventApi = axios.create({
+  baseURL: 'http://20.249.180.106:8080',
   headers: {
     'Content-Type': 'application/json'
+  }
+});
+
+// 리포트 API 기본 설정
+const reportsApi = axios.create({
+  baseURL: 'http://20.249.180.114:8080',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// 비디오 API 기본 설정
+const videoApi = axios.create({
+  baseURL: 'http://20.214.124.99:8080',
+  headers: {
+    'Content-Type': 'multipart/form-data'
   }
 });
 
@@ -19,7 +35,7 @@ const isTokenExpired = () => {
   const now = Date.now();
   const tokenAge = now - parseInt(tokenTimestamp);
   
-  return tokenAge >= (expiresIn * 1000); // expiresIn은 초 단위이므로 밀리초로 변환
+  return tokenAge >= (expiresIn * 1000);
 };
 
 // 토큰 리프레시 함수
@@ -49,78 +65,138 @@ const refreshToken = async () => {
   }
 };
 
-// 요청 인터셉터 - 토큰 추가
-api.interceptors.request.use(
-  async (config) => {
-    // 로그인 요청인 경우 토큰 체크 건너뛰기
-    if (config.url === '/login') {
+// 요청 인터셉터 - 토큰 추가 (각 API 인스턴스에 적용)
+const addTokenInterceptor = (instance) => {
+  instance.interceptors.request.use(
+    async (config) => {
+      if (config.url === '/login') {
+        return config;
+      }
+
+      if (isTokenExpired()) {
+        try {
+          const newToken = await refreshToken();
+          config.headers.Authorization = `Bearer ${newToken}`;
+        } catch (error) {
+          return Promise.reject(error);
+        }
+      } else {
+        const token = localStorage.getItem('token');
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+      }
       return config;
+    },
+    (error) => {
+      return Promise.reject(error);
     }
+  );
+};
 
-    // 토큰이 만료되었는지 확인
-    if (isTokenExpired()) {
-      try {
-        const newToken = await refreshToken();
-        config.headers.Authorization = `Bearer ${newToken}`;
-      } catch (error) {
-        return Promise.reject(error);
+// 응답 인터셉터 - 에러 처리 (각 API 인스턴스에 적용)
+const addErrorInterceptor = (instance) => {
+  instance.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+      if (error.response?.status === 401) {
+        try {
+          await refreshToken();
+        } catch (refreshError) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('refresh_token');
+          localStorage.removeItem('token_expires_in');
+          localStorage.removeItem('token_timestamp');
+          window.location.href = '/login';
+        }
       }
-    } else {
-      const token = localStorage.getItem('token');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
+      return Promise.reject(error);
     }
-    return config;
+  );
+};
+
+// 각 API 인스턴스에 인터셉터 적용
+addTokenInterceptor(eventApi);
+addTokenInterceptor(reportsApi);
+addTokenInterceptor(videoApi);
+addErrorInterceptor(eventApi);
+addErrorInterceptor(reportsApi);
+addErrorInterceptor(videoApi);
+
+// 이벤트 API
+export const eventApiService = {
+  getEvents: (params) => axios.get('/events', { params }),
+  getEventById: (id) => axios.get(`/events/${id}`),
+  createEvent: (eventData) => axios.post('/events', eventData),
+  updateEvent: (id, eventData) => axios.put(`/events/${id}`, eventData),
+  updateEventStatus: (id, status) => axios.patch(`/events/${id}/status`, { status }),
+  deleteEvent: (id) => axios.delete(`/events/${id}`),
+  getActiveEvents: () => axios.get('/events/active'),
+  getPendingEvents: () => axios.get('/events/pending'),
+  getVerifiedEvents: () => axios.get('/events/verified'),
+  getEventStatistics: (id) => axios.get(`/events/${id}/statistics`)
+};
+
+// 리포트 API
+export const reportApiService = {
+  getReports: () => reportsApi.get('/reports'),
+  getReport: (id) => reportsApi.get(`/reports/${id}`),
+  createReport: (reportData) => reportsApi.post('/reports', reportData),
+  updateReport: (id, reportData) => reportsApi.put(`/reports/${id}`, reportData),
+  deleteReport: (id) => reportsApi.delete(`/reports/${id}`),
+  submitReport: (reportData) => reportsApi.post('/reports/receivereport', reportData),
+  getReportsByUserId: async (userId, config = {}) => {
+    console.log('Fetching reports for userId:', userId);
+    try {
+      const response = await reportsApi.get(`/reports/user/${userId}`, config);
+      console.log('Reports API response:', response.data);
+      return response;
+    } catch (error) {
+      console.error('Error fetching reports:', error);
+      throw error;
+    }
   },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+  getReportsByUsername: (username, config = {}) => reportsApi.get(`/reports/username/${username}`, config)
+};
 
-// 응답 인터셉터 - 에러 처리
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    if (error.response?.status === 401) {
-      try {
-        await refreshToken();
-      } catch (refreshError) {
-        // 리프레시 토큰도 실패하면 로그인 페이지로 리디렉션
-        localStorage.removeItem('token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('token_expires_in');
-        localStorage.removeItem('token_timestamp');
-        window.location.href = '/login';
+// 비디오 API
+export const videoApiService = {
+  uploadVideo: (file, reportId) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('report_id', reportId);
+    return videoApi.post('/videos/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
       }
-    }
-    return Promise.reject(error);
-  }
-);
+    });
+  },
+  getVideo: (videoId) => videoApi.get(`/videos/${videoId}`),
+  deleteVideo: (videoId) => videoApi.delete(`/videos/${videoId}`)
+};
 
 // 인증 API
 export const authApi = {
   login: (credentials) => {
     const url = '/login';
     console.log('Login Request URL:', url);
-    console.log('Login Request Data:', {
-      username: credentials.username,
-      password: credentials.password
-    });
-    return api.post(url, {
-      username: credentials.username,
-      password: credentials.password
-    }, {
+    console.log('Login Request Data:', credentials);
+    return axios.post(url, credentials, {
       headers: {
         'Content-Type': 'application/json'
       }
     });
   },
-  register: (userData) => api.post('/signup', userData, {
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  }),
+  register: (userData) => {
+    const url = '/signup';
+    console.log('Signup Request URL:', url);
+    console.log('Signup Request Data:', userData);
+    return axios.post(url, userData, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  },
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('refresh_token');
@@ -128,41 +204,27 @@ export const authApi = {
     localStorage.removeItem('token_timestamp');
     window.location.href = '/login';
   },
-  getProfile: () => api.get('/profile'),
-  updateProfile: (profileData) => api.put('/profile', profileData)
-};
-
-// 이벤트 API
-export const eventApi = {
-  getEvents: (params) => api.get('/events', { params }),
-  getEventById: (id) => api.get(`/events/${id}`),
-  createEvent: (eventData) => api.post('/events', eventData),
-  updateEvent: (id, eventData) => api.put(`/events/${id}`, eventData),
-  updateEventStatus: (id, status) => api.patch(`/events/${id}/status`, { status }),
-  deleteEvent: (id) => api.delete(`/events/${id}`),
-  getActiveEvents: () => api.get('/events/active'),
-  getPendingEvents: () => api.get('/events/pending'),
-  getVerifiedEvents: () => api.get('/events/verified'),
-  getEventStatistics: (id) => api.get(`/events/${id}/statistics`)
+  getProfile: () => reportsApi.get('/profile'),
+  updateProfile: (profileData) => reportsApi.put('/profile', profileData)
 };
 
 // 게시물 API
 export const postApi = {
-  getPosts: (params) => api.get('/posts', { params }),
-  getPostById: (id) => api.get(`/posts/${id}`),
-  createPost: (postData) => api.post('/posts', postData),
-  updatePost: (id, postData) => api.put(`/posts/${id}`, postData),
-  updatePostStatus: (id, status) => api.patch(`/posts/${id}/status`, { status }),
-  deletePost: (id) => api.delete(`/posts/${id}`),
-  getPostsByEventId: (eventId) => api.get(`/events/${eventId}/posts`)
+  getPosts: (params) => axios.get('/posts', { params }),
+  getPostById: (id) => axios.get(`/posts/${id}`),
+  createPost: (postData) => axios.post('/posts', postData),
+  updatePost: (id, postData) => axios.put(`/posts/${id}`, postData),
+  updatePostStatus: (id, status) => axios.patch(`/posts/${id}/status`, { status }),
+  deletePost: (id) => axios.delete(`/posts/${id}`),
+  getPostsByEventId: (eventId) => axios.get(`/events/${eventId}/posts`)
 };
 
 // 관리자 API
 export const adminApi = {
-  getStatistics: () => api.get('/admin/statistics'),
-  getUsers: (params) => api.get('/admin/users', { params }),
-  updateUserRole: (userId, role) => api.patch(`/admin/users/${userId}/role`, { role }),
-  getSystemLogs: (params) => api.get('/admin/logs', { params })
+  getStatistics: () => axios.get('/admin/statistics'),
+  getUsers: (params) => axios.get('/admin/users', { params }),
+  updateUserRole: (userId, role) => axios.patch(`/admin/users/${userId}/role`, { role }),
+  getSystemLogs: (params) => axios.get('/admin/logs', { params })
 };
 
 // 미디어 API
@@ -170,7 +232,7 @@ export const mediaApi = {
   uploadVideo: (file) => {
     const formData = new FormData();
     formData.append('video', file);
-    return api.post('/media/video', formData, {
+    return axios.post('/media/video', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
@@ -179,63 +241,39 @@ export const mediaApi = {
   uploadImage: (file) => {
     const formData = new FormData();
     formData.append('image', file);
-    return api.post('/media/image', formData, {
+    return axios.post('/media/image', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
     });
   },
-  deleteMedia: (id) => api.delete(`/media/${id}`)
+  deleteMedia: (id) => axios.delete(`/media/${id}`)
 };
 
 // 위치 API
 export const locationApi = {
-  searchLocation: (query) => api.get('/locations/search', { params: { query } }),
-  getCoordinates: (address) => api.get('/locations/coordinates', { params: { address } }),
-  getAddress: (coordinates) => api.get('/locations/address', { params: coordinates })
+  searchLocation: (query) => axios.get('/locations/search', { params: { query } }),
+  getCoordinates: (address) => axios.get('/locations/coordinates', { params: { address } }),
+  getAddress: (coordinates) => axios.get('/locations/address', { params: coordinates })
 };
 
 // 지도 API
 export const mapApi = {
-  getRiskAreas: () => api.get('/map/risk-areas'),
-  getFireStations: () => api.get('/map/fire-stations'),
-  getActiveEvents: () => api.get('/map/active-events'),
-  getHeatmapData: () => api.get('/map/heatmap'),
-  getRiskAnalysis: (area) => api.get('/map/risk-analysis', { params: { area } })
+  getRiskAreas: () => axios.get('/map/risk-areas'),
+  getFireStations: () => axios.get('/map/fire-stations'),
+  getActiveEvents: () => axios.get('/map/active-events'),
+  getHeatmapData: () => axios.get('/map/heatmap'),
+  getRiskAnalysis: (area) => axios.get('/map/risk-analysis', { params: { area } })
 };
 
-// 비디오 API
-export const videoApi = {
-  uploadVideo: (file, reportId) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('report_id', reportId);
-    const token = localStorage.getItem('token');
-    return axios.post('http://20.214.124.99:8080/videos/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        'Authorization': `Bearer ${token}`
-      }
-    });
-  }
-};
-
-// 화재 신고 API
-export const reportApi = {
-  getReports: () => api.get('/reports'),
-  getReport: (id) => api.get(`/reports/${id}`),
-  createReport: (reportData) => api.post('/reports', reportData),
-  updateReport: (id, reportData) => api.put(`/reports/${id}`, reportData),
-  deleteReport: (id) => api.delete(`/reports/${id}`),
-  submitReport: (reportData) => {
-    const token = localStorage.getItem('token');
-    return axios.post('http://20.249.180.114:8080/reports/receivereport', reportData, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
-    });
-  }
-};
-
-export default api; 
+export default {
+  eventApi: eventApiService,
+  reportApi: reportApiService,
+  videoApi: videoApiService,
+  authApi,
+  postApi,
+  adminApi,
+  mediaApi,
+  locationApi,
+  mapApi
+}; 

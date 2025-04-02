@@ -119,86 +119,55 @@ import { AlertTriangle, Bell, Camera, Home, Map, Phone, RefreshCw, User } from '
 import FireReportCard from '../components/FireReportCard.vue';
 import AppHeader from '../components/AppHeader.vue';
 import { useRouter } from 'vue-router';
+import { eventApiService } from '../services/api';
 
 const activeTab = ref('confirmed');
 const isRefreshing = ref(false);
 const router = useRouter();
 
 // 화재 제보 데이터
-const fireReports = ref([
-  {
-    id: '1',
-    coordinates: { lat: 37.498095, lng: 127.027610 },
-    timestamp: '2025-03-31T23:30:00',
-    status: '진행 중',
-    isFire: true,
-    riskLevel: '높음',
-    verified: true,
-    metadata: {
-      likes: 45,
-      comments: 12,
-      videoUrl: '',
-      imageUrl: 'https://example.com/image1.jpg'
-    }
-  },
-  {
-    id: '2',
-    coordinates: { lat: 37.526120, lng: 126.925771 },
-    timestamp: '2024-03-31T15:00:00',
-    status: '진행 중',
-    isFire: true,
-    riskLevel: '중간',
-    verified: true,
-    metadata: {
-      likes: 32,
-      comments: 8,
-      videoUrl: '',
-      imageUrl: 'https://example.com/image2.jpg'
-    }
-  }
-]);
-
+const fireReports = ref([]);
 // 커뮤니티 제보 데이터
-const communityReports = ref([
-  {
-    id: '3',
-    coordinates: { lat: 37.566535, lng: 126.977969 },
-    timestamp: new Date(Date.now() - 600000).toISOString(), // 10분 전
-    status: '진행 중',
-    isFire: false,
-    riskLevel: '낮음',
-    verified: false,
-    metadata: {
-      likes: 67,
-      comments: 12,
-      videoUrl: '',
-      imageUrl: 'https://placehold.co/600x400'
-    }
-  },
-  {
-    id: '4',
-    coordinates: { lat: 37.538617, lng: 127.094454 },
-    timestamp: new Date(Date.now() - 3600000).toISOString(), // 1시간 전
-    status: '진행 중',
-    isFire: false,
-    riskLevel: '낮음',
-    verified: false,
-    metadata: {
-      likes: 89,
-      comments: 23,
-      videoUrl: '',
-      imageUrl: 'https://placehold.co/400x200'
-    }
-  }
-]);
+const communityReports = ref([]);
 
 // 데이터 새로고침 함수
 const refreshData = async () => {
   isRefreshing.value = true;
   
   try {
-    // 여기에 데이터 새로고침 로직 추가
-    await new Promise(resolve => setTimeout(resolve, 1000)); // 시뮬레이션
+    const events = await eventApiService.getEvents();
+    // API 응답 데이터를 현재 구조에 맞게 변환
+    fireReports.value = events.filter(event => event.isFire).map(event => ({
+      id: event.id,
+      coordinates: { lat: event.latitude, lng: event.longitude },
+      timestamp: event.createdAt,
+      status: event.status,
+      isFire: event.isFire,
+      riskLevel: event.riskLevel,
+      verified: event.verified,
+      metadata: {
+        likes: event.likes || 0,
+        comments: event.comments || 0,
+        videoUrl: event.videoUrl || '',
+        imageUrl: event.imageUrl || ''
+      }
+    }));
+
+    communityReports.value = events.filter(event => !event.isFire).map(event => ({
+      id: event.id,
+      coordinates: { lat: event.latitude, lng: event.longitude },
+      timestamp: event.createdAt,
+      status: event.status,
+      isFire: event.isFire,
+      riskLevel: event.riskLevel,
+      verified: event.verified,
+      metadata: {
+        likes: event.likes || 0,
+        comments: event.comments || 0,
+        videoUrl: event.videoUrl || '',
+        imageUrl: event.imageUrl || ''
+      }
+    }));
   } catch (error) {
     console.error('데이터 새로고침 오류:', error);
   } finally {
@@ -206,11 +175,9 @@ const refreshData = async () => {
   }
 };
 
-// 디버깅을 위한 로그
+// 컴포넌트 마운트 시 데이터 로드
 onMounted(() => {
-  console.log('HomePage 마운트됨');
-  console.log('fireReports:', fireReports.value);
-  console.log('communityReports:', communityReports.value);
+  refreshData();
 });
 </script>
 

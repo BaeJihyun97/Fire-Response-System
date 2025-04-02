@@ -39,6 +39,17 @@
           </div>
         </router-link>
         
+        <button 
+          v-if="userInfo"
+          @click="goToMyReports"
+          class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+        >
+          <div class="flex items-center">
+            <FileText class="h-4 w-4 mr-2" />
+            <span>내 리포트</span>
+          </div>
+        </button>
+        
         <router-link 
           to="/notifications" 
           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -91,7 +102,7 @@
   
   <script setup>
   import { ref, onMounted, onUnmounted, computed } from 'vue';
-  import { Bell, LogIn, LogOut, User, UserPlus } from 'lucide-vue-next';
+  import { Bell, LogIn, LogOut, User, UserPlus, FileText } from 'lucide-vue-next';
   import { useRouter, useRoute } from 'vue-router';
   
   const router = useRouter();
@@ -157,6 +168,29 @@
       !menu.value.contains(event.target)
     ) {
       isMenuOpen.value = false;
+    }
+  };
+  
+  // 내 리포트로 이동하는 함수
+  const goToMyReports = () => {
+    if (userInfo.value) {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const base64Url = token.split('.')[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+          }).join(''));
+          
+          const payload = JSON.parse(jsonPayload);
+          const userId = payload.sub; // JWT 토큰의 sub 필드에서 userid 가져오기
+          router.push(`/user/${userId}/reports`);
+          isMenuOpen.value = false;
+        } catch (error) {
+          console.error('토큰 디코딩 실패:', error);
+        }
+      }
     }
   };
   

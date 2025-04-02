@@ -9,6 +9,7 @@ import AllFireReportsView from '../views/AllFireReportsView.vue';
 import AllClosedEventsView from '../views/AllClosedEventsView.vue';
 import MapPage from '../views/MapPage.vue';
 import FireReportDetail from '../views/admin/FireReportDetail.vue'; // 관리자용 화재 제보 상세 페이지 추가
+import UserReportsView from '../views/UserReportsView.vue';
 
 const routes = [
   {
@@ -87,6 +88,12 @@ const routes = [
     path: '/profile',
     name: 'Profile',
     component: () => import('../views/ProfilePage.vue')
+  },
+  {
+    path: '/user/:userId/reports',
+    name: 'UserReports',
+    component: UserReportsView,
+    props: true
   },
 ];
 
