@@ -72,7 +72,7 @@
           
           <!-- 프로필 정보 -->
           <div class="pt-16 px-6 pb-6">
-            <h1 class="text-xl font-bold text-center text-gray-900 mb-1">{{ userProfile.name }}</h1>
+            <h1 class="text-xl font-bold text-center text-gray-900 mb-1">{{ userProfile.family_name }} {{ userProfile.given_name }}</h1>
             <p class="text-sm text-gray-500 text-center mb-4">{{ userProfile.email }}</p>
             
             <div class="flex justify-center space-x-4 mb-6">
@@ -287,16 +287,48 @@
   
   // 사용자 프로필 데이터
   const userProfile = ref({
-    name: '김소방',
-    email: 'user@example.com',
-    phone: '010-1234-5678',
-    address: '서울시 강남구',
-    avatar: 'https://placehold.co/96x96',
-    reportCount: 12,
-    confirmCount: 45,
-    level: 3,
-    verified: true
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    avatar: '',
+    reportCount: 0,
+    confirmCount: 0,
+    level: 1,
+    verified: false
   });
+  
+  // 토큰 디코딩 함수
+  const decodeToken = () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        
+        const payload = JSON.parse(jsonPayload);
+        userProfile.value = {
+          name: payload.name,
+          given_name: payload.given_name,
+          family_name: payload.family_name,
+          email: payload.email,
+          phone: '', // 토큰에 없는 정보는 기본값 유지
+          address: '', // 토큰에 없는 정보는 기본값 유지
+          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(payload.family_name + payload.given_name)}&background=random`,
+          reportCount: 0, // API에서 가져와야 함
+          confirmCount: 0, // API에서 가져와야 함
+          level: 1, // API에서 가져와야 함
+          verified: payload.email_verified || false
+        };
+      } catch (error) {
+        console.error('토큰 디코딩 실패:', error);
+        localStorage.removeItem('token');
+      }
+    }
+  };
   
   // 비밀번호 변경 폼
   const passwordForm = ref({
@@ -375,11 +407,9 @@
   
   // 로그아웃
   const logout = () => {
-    // 실제로는 로그아웃 처리 및 로그인 페이지로 리디렉션
-    console.log('로그아웃');
+    localStorage.removeItem('token');
     showToastMessage('로그아웃 되었습니다.');
-    // 실제 구현에서는 아래 주석을 해제
-    // router.push('/login');
+    router.push('/login');
   };
   
   // 이미지 선택기 열기
@@ -417,7 +447,7 @@
   
   // 컴포넌트 마운트 시 초기화
   onMounted(() => {
-    console.log('ProfilePage 마운트됨');
+    decodeToken();
   });
   </script>
   

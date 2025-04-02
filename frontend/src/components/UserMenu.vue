@@ -22,9 +22,9 @@
         ref="menu"
       >
         <!-- 사용자 정보 -->
-        <div class="px-4 py-2 border-b border-gray-100">
-          <p class="text-sm font-medium text-gray-900">사용자</p>
-          <p class="text-xs text-gray-500 truncate">user@example.com</p>
+        <div v-if="userInfo" class="px-4 py-2 border-b border-gray-100">
+          <p class="text-sm font-medium text-gray-900">{{ userInfo.family_name }} {{ userInfo.given_name }}</p>
+          <p class="text-xs text-gray-500 truncate">{{ userInfo.email }}</p>
         </div>
         
         <!-- 메뉴 항목 -->
@@ -51,35 +51,47 @@
         </router-link>
         
         <div class="border-t border-gray-100 mt-1 pt-1">
-          <router-link 
-            to="/login" 
-            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            @click="isMenuOpen = false"
+          <template v-if="!userInfo">
+            <router-link 
+              to="/login" 
+              class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              @click="isMenuOpen = false"
+            >
+              <div class="flex items-center">
+                <LogIn class="h-4 w-4 mr-2" />
+                <span>로그인</span>
+              </div>
+            </router-link>
+            
+            <router-link 
+              to="/register" 
+              class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              @click="isMenuOpen = false"
+            >
+              <div class="flex items-center">
+                <UserPlus class="h-4 w-4 mr-2" />
+                <span>회원가입</span>
+              </div>
+            </router-link>
+          </template>
+          <button 
+            v-else
+            @click="handleLogout"
+            class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
           >
             <div class="flex items-center">
-              <LogIn class="h-4 w-4 mr-2" />
-              <span>로그인</span>
+              <LogOut class="h-4 w-4 mr-2" />
+              <span>로그아웃</span>
             </div>
-          </router-link>
-          
-          <router-link 
-            to="/register" 
-            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            @click="isMenuOpen = false"
-          >
-            <div class="flex items-center">
-              <UserPlus class="h-4 w-4 mr-2" />
-              <span>회원가입</span>
-            </div>
-          </router-link>
+          </button>
         </div>
       </div>
     </div>
   </template>
   
   <script setup>
-  import { ref, onMounted, onUnmounted } from 'vue';
-  import { Bell, LogIn, User, UserPlus } from 'lucide-vue-next';
+  import { ref, onMounted, onUnmounted, computed } from 'vue';
+  import { Bell, LogIn, LogOut, User, UserPlus } from 'lucide-vue-next';
   import { useRouter, useRoute } from 'vue-router';
   
   const router = useRouter();
@@ -88,9 +100,47 @@
   const isMenuOpen = ref(false);
   const menuButton = ref(null);
   const menu = ref(null);
+  const userInfo = ref(null);
   
   // 아바타 URL 생성
-  const avatarUrl = 'https://ui-avatars.com/api/?name=User&background=random';
+  const avatarUrl = computed(() => {
+    if (userInfo.value) {
+      return `https://ui-avatars.com/api/?name=${encodeURIComponent(userInfo.value.family_name + userInfo.value.given_name)}&background=random`;
+    }
+    return 'https://ui-avatars.com/api/?name=User&background=random';
+  });
+  
+  // 토큰 디코딩 함수
+  const decodeToken = () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        
+        const payload = JSON.parse(jsonPayload);
+        userInfo.value = {
+          given_name: payload.given_name,
+          family_name: payload.family_name,
+          email: payload.email
+        };
+      } catch (error) {
+        console.error('토큰 디코딩 실패:', error);
+        localStorage.removeItem('token');
+      }
+    }
+  };
+  
+  // 로그아웃 처리
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    userInfo.value = null;
+    isMenuOpen.value = false;
+    router.push('/login');
+  };
   
   // 메뉴 토글 함수
   const toggleMenu = () => {
@@ -113,6 +163,7 @@
   // 이벤트 리스너 등록 및 해제
   onMounted(() => {
     document.addEventListener('click', handleClickOutside);
+    decodeToken();
   });
   
   onUnmounted(() => {

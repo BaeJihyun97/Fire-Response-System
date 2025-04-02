@@ -8,8 +8,8 @@
       <div class="flex items-center">
         <div>
           <div class="flex items-center">
-            <div class="h-6 w-6 rounded-full bg-gray-200 overflow-hidden mr-2">
-              <img src="https://ui-avatars.com/api/?name=Fire&background=0D9488&color=fff" alt="프로필" class="h-full w-full object-cover" />
+            <div class="h-8 w-8 rounded-full bg-gray-200 overflow-hidden mr-2">
+              <img src="https://ui-avatars.com/api/?name=🔥&background=DC2626&color=fff&size=128" alt="화재" class="h-full w-full object-cover" />
             </div>
             <h3 class="font-medium text-gray-900">화재 #{{ fire.id }}</h3>
             <span v-if="fire.verified" class="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-800 border border-blue-200 rounded-full flex items-center">
