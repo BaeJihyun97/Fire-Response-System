@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Optional, List
 from beanie import Document
 from pydantic import BaseModel, Field
-from pymongo import IndexModel, ASCENDING
+from pymongo import IndexModel, ASCENDING, DESCENDING
 
 
 class VideoStatus(str, Enum):
@@ -72,7 +72,10 @@ class VideoAnalysisReport(Document):
 
     class Settings:
         name = "video_analysis_reports"
-        indexes = [IndexModel([("video_analysis_id", ASCENDING)], unique=True)]
+        indexes = [
+            IndexModel([("video_analysis_id", ASCENDING)], unique=True),
+            IndexModel([("created_at", DESCENDING)]),
+        ]
 
     @classmethod
     async def get_next_sequence(cls) -> int:

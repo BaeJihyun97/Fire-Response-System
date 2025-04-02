@@ -44,7 +44,7 @@ class VideoAnalysisRequest(BaseModel):
 
 class VideoWithAnalysis(BaseModel):
     video: Video
-    latest_analysis: Optional[VideoAnalysisReport] = None
+    latest_analysis: Optional[dict] = None
 
 
 # Initialize services
@@ -180,21 +180,24 @@ async def upload_video(
 
 
 @app.get("/videos/{video_id}", response_model=VideoWithAnalysis)
-async def get_video(video_id: str):
+async def get_video(video_id: int):
     """Get video information and latest analysis results."""
     video = await Video.find_one({"video_id": video_id})
     if not video:
         raise HTTPException(status_code=404, detail="Video not found")
 
     # Get the latest analysis report for this video
-    latest_analysis = await VideoAnalysisReport.find_one(
-        {"video_id": video_id},
-        sort=[
-            ("created_at", -1)
-        ],  # Sort by created_at in descending order to get the latest
+    results = (
+        await VideoAnalysisReport.find(VideoAnalysisReport.video_id == video_id)
+        .sort("-created_at")
+        .to_list(1)
     )
+    latest_analysis = results[0] if results else None
 
-    return VideoWithAnalysis(video=video, latest_analysis=latest_analysis)
+    return VideoWithAnalysis(
+        video=video,
+        latest_analysis=latest_analysis.openai_analysis if latest_analysis else None,
+    )
 
 
 # @app.delete("/videos/{video_id}")
