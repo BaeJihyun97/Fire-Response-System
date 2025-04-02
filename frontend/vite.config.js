@@ -53,6 +53,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
         ws: true,
+      },
+      '/notifications': {
+        target: 'http://20.249.170.119:8080',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
       }
     }
   }

@@ -99,9 +99,12 @@
               <Camera class="h-7 w-7" />
             </button>
           </router-link>
-          <router-link to="/notifications" class="flex flex-col items-center text-gray-500">
+          <router-link to="/notifications" class="flex flex-col items-center text-gray-500 relative">
             <Bell class="h-6 w-6" />
             <span class="text-xs mt-1">알림</span>
+            <span v-if="unreadCount > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+              {{ unreadCount }}
+            </span>
           </router-link>
           <router-link to="/profile" class="flex flex-col items-center text-gray-500">
             <User class="h-6 w-6" />
@@ -121,15 +124,39 @@ import AppHeader from '../components/AppHeader.vue';
 import { useRouter } from 'vue-router';
 import { postApi } from '../services/api';
 import { reverseGeocode } from '../services/geocodingService';
+import { getUnreadNotifications } from '../services/notificationService';
+import { getCurrentLocation } from '../services/locationService';
 
 const activeTab = ref('confirmed');
 const isRefreshing = ref(false);
 const router = useRouter();
+const unreadCount = ref(0);
 
 // 화재 제보 데이터
 const fireReports = ref([]);
 // 커뮤니티 제보 데이터
 const communityReports = ref([]);
+
+// 토큰에서 userId 추출 함수
+const getUserIdFromToken = () => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      
+      const payload = JSON.parse(jsonPayload);
+      return payload.sub || payload.userId; // sub 또는 userId 필드 사용
+    } catch (error) {
+      console.error('토큰 디코딩 실패:', error);
+      return null;
+    }
+  }
+  return null;
+};
 
 // 데이터 새로고침 함수
 const refreshData = async () => {
@@ -183,9 +210,27 @@ const refreshData = async () => {
   }
 };
 
+// 알림 수 업데이트 함수
+const updateNotificationCount = async () => {
+  try {
+    const userId = getUserIdFromToken();
+    if (!userId) {
+      console.error('사용자 ID를 찾을 수 없습니다.');
+      return;
+    }
+
+    const location = await getCurrentLocation();
+    const response = await getUnreadNotifications(userId, location.latitude, location.longitude);
+    unreadCount.value = response.count;
+  } catch (error) {
+    console.error('알림 수 업데이트 실패:', error);
+  }
+};
+
 // 컴포넌트 마운트 시 데이터 로드
 onMounted(() => {
   refreshData();
+  updateNotificationCount();
 });
 </script>
 
