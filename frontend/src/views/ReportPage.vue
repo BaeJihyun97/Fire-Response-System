@@ -192,6 +192,7 @@ import {
   Loader
 } from 'lucide-vue-next';
 import { useNotificationStore } from '../stores/notificationStore';
+import { reportApi, videoApi } from '../services/api';
 
 const router = useRouter();
 const notificationStore = useNotificationStore();
@@ -346,7 +347,7 @@ const startRecording = () => {
   recordedChunks.value = [];
   
   // MediaRecorder 설정
-  const options = { mimeType: 'video/webm;codecs=vp9,opus' };
+  const options = { mimeType: 'video/mp4' };
   try {
     mediaRecorder.value = new MediaRecorder(stream.value, options);
   } catch (e) {
@@ -443,22 +444,22 @@ const submitReport = async () => {
   
   try {
     // 제보 데이터 준비
-    const formData = new FormData();
-    formData.append('video', reportData.value.videoBlob, 'fire_report.webm');
-    formData.append('userId', reportData.value.userId);
-    formData.append('coordinates', JSON.stringify(reportData.value.coordinates));
-    formData.append('timestamp', new Date().toISOString());
-    formData.append('reportId', `report_${Date.now()}`); // 임시 reportId 생성
-    formData.append('description', reportData.value.description);
+    const reportPayload = {
+      userId: 1, // 임시로 1로 설정
+      longitude: reportData.value.coordinates.lng,
+      latitude: reportData.value.coordinates.lat,
+      description: reportData.value.description
+    };
     
-    // 실제 API 호출 (여기서는 시뮬레이션)
-    // const response = await fetch('/api/fire-reports', {
-    //   method: 'POST',
-    //   body: formData
-    // });
+    // 제보 데이터 전송
+    const reportResponse = await reportApi.submitReport(reportPayload);
+    const reportId = reportResponse.data.reportId;
     
-    // 성공적인 제보 시뮬레이션 (실제로는 API 응답 처리)
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // 비디오 파일 생성
+    const videoFile = new File([reportData.value.videoBlob], 'fire_report.mp4', { type: 'video/mp4' });
+    
+    // 비디오 업로드
+    await videoApi.uploadVideo(videoFile, reportId);
     
     // 알림 추가
     notificationStore.addNotification({

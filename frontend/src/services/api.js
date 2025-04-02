@@ -204,13 +204,28 @@ export const mapApi = {
   getRiskAnalysis: (area) => api.get('/map/risk-analysis', { params: { area } })
 };
 
+// 비디오 API
+export const videoApi = {
+  uploadVideo: (file, reportId) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('report_id', reportId);
+    return axios.post('http://20.249.170.119:80/videos/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  }
+};
+
 // 화재 신고 API
 export const reportApi = {
   getReports: () => api.get('/reports'),
   getReport: (id) => api.get(`/reports/${id}`),
   createReport: (reportData) => api.post('/reports', reportData),
   updateReport: (id, reportData) => api.put(`/reports/${id}`, reportData),
-  deleteReport: (id) => api.delete(`/reports/${id}`)
+  deleteReport: (id) => api.delete(`/reports/${id}`),
+  submitReport: (reportData) => api.post('http://20.249.67.38:82/reports//receivereport', reportData)
 };
 
 export default api; 
