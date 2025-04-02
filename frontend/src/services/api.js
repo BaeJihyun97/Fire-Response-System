@@ -221,8 +221,20 @@ export const postApi = {
 export const eventsApi = {
   getEvents: () => axios.get('/events'),
   getEvent: (id) => axios.get(`/events/${id}`),
-  updateEventType: (id, type) => axios.put(`/events/${id}/updateeventtype`, { eventType: type }),
-  updateStatus: (id, status) => axios.put(`/events/${id}/updatestatus`, { status: status })
+  updateEventType: (id, eventType) => {
+    // 먼저 이벤트 정보를 가져와서 _links URL을 확인
+    return axios.get(`/events/${id}`).then(response => {
+      const updateUrl = response.data._links.updateeventtype.href;
+      return axios.patch(updateUrl, { eventType });
+    });
+  },
+  updateStatus: (id, status) => {
+    // 먼저 이벤트 정보를 가져와서 _links URL을 확인
+    return axios.get(`/events/${id}`).then(response => {
+      const updateUrl = response.data._links.updatestatus.href;
+      return axios.patch(updateUrl, { status });
+    });
+  }
 };
 
 export default {

@@ -224,7 +224,7 @@
                       <div>
                         <label class="block text-xs text-gray-500 mb-1">화재 상태 변경</label>
                         <button 
-                          @click="handleStatusChange(report)" 
+                          @click="updateEventStatus(report.id, 'resolved')" 
                           class="w-full py-1.5 bg-red-100 text-red-700 border border-red-300 rounded-md text-sm hover:bg-red-200 transition-colors flex items-center justify-center"
                         >
                           <XCircle class="h-4 w-4 mr-1" />
@@ -247,7 +247,7 @@
                       <div>
                         <label class="block text-xs text-gray-500 mb-1">이벤트 관리</label>
                         <button 
-                          @click="deleteFireEvent(report)" 
+                          @click="updateEventType(report.id, 'nonfire')" 
                           class="w-full py-1.5 bg-red-100 text-red-700 border border-red-300 rounded-md text-sm hover:bg-red-200 transition-colors flex items-center justify-center"
                         >
                           <Trash2 class="h-4 w-4 mr-1" />
@@ -346,13 +346,13 @@
                         <label class="block text-xs text-gray-500 mb-1">제보 검증</label>
                         <div class="flex gap-2">
                           <button 
-                            @click="confirmAsFireReport(report)" 
+                            @click="updateEventType(report.id, 'fire')" 
                             class="flex-1 px-3 py-2 bg-red-600 text-white rounded-md text-sm hover:bg-red-700 transition-colors"
                           >
                             화재 확인
                           </button>
                           <button 
-                            @click="markAsFalseReport(report)" 
+                            @click="updateEventType(report.id, 'nonfire')" 
                             class="flex-1 px-3 py-2 bg-gray-600 text-white rounded-md text-sm hover:bg-gray-700 transition-colors"
                           >
                             오보 처리
@@ -454,7 +454,7 @@
                         </div>
                         <div class="flex justify-end mt-2">
                           <button 
-                            @click="restoreReport(report)" 
+                            @click="updateEventStatus(report.id, 'pending')" 
                             class="px-3 py-1 bg-gray-100 text-gray-700 border border-gray-300 rounded-md text-xs hover:bg-gray-200 transition-colors flex items-center"
                           >
                             <RefreshCw class="h-3 w-3 mr-1" />
@@ -763,10 +763,11 @@ const loadEvents = async () => {
   try {
     const response = await eventsApi.getEvents();
     const events = response.data._embedded?.events || [];
+    console.log('서버 응답:', events); // 디버깅을 위한 로그
     
     // 각 상태별로 이벤트 필터링
     activeReports.value = events.filter(event => 
-      event.status === 'active' && event.eventType === 'fire'
+      event.status === 'pending' && event.eventType === 'fire'
     ).map(event => ({
       id: event._links.self.href.split('/').pop(),
       coordinates: { lat: event.latitude, lng: event.longitude },
@@ -778,7 +779,7 @@ const loadEvents = async () => {
     }));
     
     pendingReports.value = events.filter(event => 
-      event.status === 'pending'
+      event.status === 'pending' && event.eventType === 'nonFire'
     ).map(event => ({
       id: event._links.self.href.split('/').pop(),
       coordinates: { lat: event.latitude, lng: event.longitude },
@@ -790,13 +791,13 @@ const loadEvents = async () => {
     }));
     
     closedReports.value = events.filter(event => 
-      event.status === 'closed'
+      event.status === 'resolved'
     ).map(event => ({
       id: event._links.self.href.split('/').pop(),
       coordinates: { lat: event.latitude, lng: event.longitude },
       timestamp: event.createdAt,
       status: '종료',
-      isFire: true,
+      isFire: event.eventType === 'fire',
       riskLevel: '중간',
       verified: true
     }));
@@ -808,6 +809,40 @@ const loadEvents = async () => {
     }
   } catch (error) {
     console.error('이벤트 데이터 로드 실패:', error);
+  }
+};
+
+// 이벤트 상태 변경
+const updateEventStatus = async (eventId, status) => {
+  try {
+    console.log('상태 변경 시도:', { eventId, status }); // 디버깅을 위한 로그
+    const response = await eventsApi.updateStatus(eventId, status);
+    console.log('상태 변경 응답:', response); // 디버깅을 위한 로그
+    await loadEvents();
+    if (status === 'resolved') {
+      activeTab.value = 'closed';
+    } else if (status === 'pending') {
+      activeTab.value = 'pending';
+    }
+  } catch (error) {
+    console.error('이벤트 상태 변경 실패:', error);
+  }
+};
+
+// 이벤트 타입 변경
+const updateEventType = async (eventId, eventType) => {
+  try {
+    console.log('타입 변경 시도:', { eventId, eventType }); // 디버깅을 위한 로그
+    const response = await eventsApi.updateEventType(eventId, eventType);
+    console.log('타입 변경 응답:', response); // 디버깅을 위한 로그
+    await loadEvents();
+    if (eventType === 'fire') {
+      activeTab.value = 'active';
+    } else if (eventType === 'nonfire') {
+      activeTab.value = 'closed';
+    }
+  } catch (error) {
+    console.error('이벤트 타입 변경 실패:', error);
   }
 };
 
