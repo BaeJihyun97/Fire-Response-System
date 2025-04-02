@@ -101,7 +101,7 @@ const refreshData = async () => {
         timestamp: report.uploadedAt,
         status: report.status || '진행 중',
         isFire: true,
-        riskLevel: report.riskLevel || '중간',
+        riskLevel: report.riskLevel || 'N/A',
         verified: report.verified || false,
         metadata: {
           likes: report.likes || 0,

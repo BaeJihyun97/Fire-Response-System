@@ -163,6 +163,37 @@ const getUserIdFromToken = () => {
   return null;
 };
 
+const formatAddress = (address) => {
+  if (!address) return '';
+
+  const parts = [];
+  if (address.province) parts.push(address.province);
+  if (address.city) parts.push(address.city);
+  if (address.borough) parts.push(address.borough);
+  if (address.quarter) parts.push(address.quarter);
+  if (address.road) parts.push(address.road);
+  if (address.house_number) parts.push(address.house_number);
+
+  return parts.join(' ');
+};
+
+const getLocationInfo = async (coordinates) => {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coordinates.lat}&lon=${coordinates.lng}&zoom=18&addressdetails=1&accept-language=ko`
+    );
+    const data = await response.json();
+
+    if (data && data.address) {
+      return formatAddress(data.address);
+    }
+    return '위치 정보 없음';
+  } catch (error) {
+    console.error('위치 정보 로딩 실패:', error);
+    return '위치 정보 없음';
+  }
+};
+
 // 데이터 새로고침 함수
 const refreshData = async () => {
   isRefreshing.value = true;
@@ -179,8 +210,11 @@ const refreshData = async () => {
       // 위도/경도를 이용해 주소 가져오기
       let location = '';
       try {
-        const address = await reverseGeocode(event.latitude, event.longitude);
-        location = address.fullAddress || `위도: ${event.latitude.toFixed(5)}, 경도: ${event.longitude.toFixed(5)}`;
+        const address = await getLocationInfo({
+          lat: event.latitude,
+          lng: event.longitude
+        });
+        location = address;
       } catch (error) {
         console.error('주소 변환 실패:', error);
         location = `위도: ${event.latitude.toFixed(5)}, 경도: ${event.longitude.toFixed(5)}`;
@@ -203,7 +237,7 @@ const refreshData = async () => {
       return {
         id: event.postId,
         coordinates: { lat: event.latitude, lng: event.longitude },
-        location: '',
+        location: location,
         timestamp: new Date().toISOString(),
         status: '진행 중',
         isFire: isFire,
@@ -230,42 +264,14 @@ const refreshData = async () => {
   }
 };
 
-const formatAddress = (address) => {
-  if (!address) return '';
-
-  const parts = [];
-  if (address.borough) parts.push(address.borough);
-  if (address.quarter) parts.push(address.quarter);
-  // if (address.road) parts.push(address.road);
-
-  return parts.join(' ');
-};
-
-const getLocationInfo = async (lat, lng) => {
-  try {
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=ko`
-    );
-    const data = await response.json();
-
-    if (data && data.address) {
-      return formatAddress(data.address);
-    }
-    return `위도: ${lat}, 경도: ${lng}`;
-  } catch (error) {
-    console.error('위치 정보 로딩 실패:', error);
-    return `위도: ${lat}, 경도: ${lng}`;
-  }
-};
-
 // 위치 정보 로드
 const loadLocationInfo = async (lat, lng) => {
   try {
-    const result = await getLocationInfo(lat, lng);
+    const result = await getLocationInfo({ lat, lng });
     warnLocation.value = result;
   } catch (err) {
     console.error('위치 정보 로딩 오류:', err);
-    displayLocation.value = `위도: ${lat}, 경도: ${lng}`;
+    warnLocation.value = `위도: ${lat}, 경도: ${lng}`;
   }
 };
 
@@ -288,7 +294,6 @@ const updateNotificationCount = async () => {
     console.error('알림 수 업데이트 실패:', error);
   }
 };
-
 
 // 위치 정보 가져오기
 // const getLocation = async () => {

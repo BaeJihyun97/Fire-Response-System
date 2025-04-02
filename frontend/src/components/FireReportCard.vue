@@ -224,6 +224,37 @@ const displayLocation = computed(() => {
   return '위치 정보 없음';
 });
 
+const formatAddress = (address) => {
+  if (!address) return '';
+
+  const parts = [];
+  if (address.province) parts.push(address.province);
+  if (address.city) parts.push(address.city);
+  if (address.borough) parts.push(address.borough);
+  if (address.quarter) parts.push(address.quarter);
+  if (address.road) parts.push(address.road);
+  if (address.house_number) parts.push(address.house_number);
+
+  return parts.join(' ');
+};
+
+const getLocationInfo = async (coordinates) => {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coordinates.lat}&lon=${coordinates.lng}&zoom=18&addressdetails=1&accept-language=ko`
+    );
+    const data = await response.json();
+
+    if (data && data.address) {
+      return formatAddress(data.address);
+    }
+    return '위치 정보 없음';
+  } catch (error) {
+    console.error('위치 정보 로딩 실패:', error);
+    return '위치 정보 없음';
+  }
+};
+
 // 컴포넌트 마운트 시 좌표로부터 주소 변환
 onMounted(async () => {
   console.log('FireReportCard 마운트됨, 좌표:', props.fire.coordinates);
@@ -236,12 +267,8 @@ onMounted(async () => {
 
   try {
     // 좌표를 주소로 변환 (역지오코딩)
-    const address = await reverseGeocode(
-      props.fire.coordinates.lat,
-      props.fire.coordinates.lng
-    );
-
-    formattedAddress.value = address;
+    const address = await getLocationInfo(props.fire.coordinates);
+    formattedAddress.value = { fullAddress: address };
     console.log('주소 변환 성공:', address);
   } catch (error) {
     console.error('주소 변환 실패:', error);
