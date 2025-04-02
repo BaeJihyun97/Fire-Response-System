@@ -47,6 +47,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
         ws: true,
+      },
+      '/posts': {
+        target: 'http://20.214.121.111:8080',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
       }
     }
   }

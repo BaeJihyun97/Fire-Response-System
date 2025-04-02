@@ -233,6 +233,22 @@ const reportData = ref({
   description: ''
 });
 
+// Keycloak 토큰에서 사용자 ID 추출 함수
+const getUserIdFromToken = () => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    throw new Error('토큰이 없습니다. 로그인이 필요합니다.');
+  }
+  
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.sub;
+  } catch (error) {
+    console.error('토큰 디코딩 오류:', error);
+    throw new Error('토큰이 유효하지 않습니다.');
+  }
+};
+
 // 위치 정보 가져오기
 const loadLocationInfo = async (coordinates) => {
   try {
@@ -443,9 +459,12 @@ const submitReport = async () => {
   isSubmitting.value = true;
   
   try {
+    // 토큰에서 사용자 ID 추출
+    const userId = getUserIdFromToken();
+    
     // 제보 데이터 준비
     const reportPayload = {
-      userId: 1, // 임시로 1로 설정
+      userId: userId,
       longitude: reportData.value.coordinates.lng,
       latitude: reportData.value.coordinates.lat,
       description: reportData.value.description
