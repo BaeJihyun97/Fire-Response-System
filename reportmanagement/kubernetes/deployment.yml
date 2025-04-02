@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
         - name: reportmanagement
-          image: team05registry.azurecr.io/reportmanagement:v5
+          image: team05registry.azurecr.io/reportmanagement4:v1
           ports:
             - containerPort: 8080

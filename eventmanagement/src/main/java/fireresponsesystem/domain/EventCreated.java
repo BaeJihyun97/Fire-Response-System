@@ -21,7 +21,7 @@ public class EventCreated extends AbstractEvent {
     private Date createdAt;
     private Date resolvedAt;
     private Long reportId;
-
+    private String userId;
     public EventCreated(Event aggregate) {
         super(aggregate);
     }

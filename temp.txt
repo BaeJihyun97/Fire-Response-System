@@ -1,7 +1,37 @@
 
-http POST 20.214.119.42:82/reports/receivereport userId=1 description="test1" longitude=0.3 latitude=1.3
+http POST 20.249.180.114:8080/reports/receivereport userId=1 description="test1" longitude=0.3 latitude=1.3
 http POST reportmanagement:8080/reports/receivereport userId=1 description="test1" longitude=0.3 latitude=1.3
-http POST 20.249.194.117:8080/reports/receivereport userId=1 description="test1" longitude=0.3 latitude=1.3
+http POST 20.249.194.117:8080/reports/receivereport userId="1" description="test1" longitude=0.3 latitude=1.3
+
+http POST 20.249.180.114:8080/reports/receivereport userId="5490077b-be9d-434a-9e68-0d507650e186" description="test1" longitude=0.3 latitude=1.3
+
+http POST videoprocessing:8080/videos/upload reportId=1
+
+http GET 20.249.180.114:8080/reports/{id}
+http GET 20.249.180.114:8080/reports
+http GET 20.249.180.114:8080/reports/userId/1
+
+
+http GET 20.249.180.106:8080/events
+http GET 20.249.180.106:8080/events/1
+http POST 20.249.180.106:8080/events/1/updateeventtype 
+
+http POST localhost:8082/reports/receivereport userId="1" description="test1" longitude=0.3 latitude=1.3
+http GET localhost:8082/reports/userId/1 
+
+
+
+http PUT 20.249.180.106:8080/events/1/updateeventtype eventId=1 eventType="fire"
+http PUT 20.249.180.106:8080/events/1/updateeventtype eventId=1 eventType="nonFire"
+
+http PUT 20.249.180.106:8080/events/1/updatestatus eventId=1 status="pending"
+http PUT 20.249.180.106:8080/events/1/updatestatus eventId=1 status="resolved"
+
+http PUT localhost:8084/events/1/updatestatus eventId=1 status="resolved"
+
+
+
+pending, resolved
 
 curl -X POST http://localhost:8088/realms/my-realm/protocol/openid-connect/token \
   -H "Content-Type: application/x-www-form-urlencoded" \
@@ -21,6 +51,8 @@ http POST http://20.249.194.117:8080/reports/receivereport \
 http POST http://20.249.194.117:8080/reports/receivereport \
   userId=1 description="test1" longitude=0.3 latitude=1.3
 
+http POST  http://20.249.194.117:8080/videos/upload \
+  reportId=1 file="test"
 
 
 http POST http://20.249.194.117:8080/signup \

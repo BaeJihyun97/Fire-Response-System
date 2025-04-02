@@ -7,7 +7,7 @@ import lombok.Data;
 @Data
 public class ReceiveReportCommand {
 
-    private Long userId;
+    private String userId;
     private Float longitude;
     private Float latitude;
     private String description;

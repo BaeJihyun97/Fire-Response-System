@@ -11,4 +11,7 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
     
     // eventId로 Report 목록을 찾는 메서드
     List<Report> findByEventId(Long eventId);
+    
+    // userId로 Report 목록을 찾는 메서드
+    List<Report> findByUserId(String userId);
 }

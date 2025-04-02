@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
         - name: eventmanagement
-          image: team05registry.azurecr.io/eventmanagement:v5
+          image: team05registry.azurecr.io/eventmanagement4:v1
           ports:
             - containerPort: 8080

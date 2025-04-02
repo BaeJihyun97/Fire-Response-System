@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
         - name: gateway
-          image: team05registry.azurecr.io/gateway2:v4
+          image: team05registry.azurecr.io/gateway:v1
           ports:
             - containerPort: 8080

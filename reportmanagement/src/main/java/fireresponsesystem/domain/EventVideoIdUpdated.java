@@ -13,7 +13,7 @@ public class EventVideoIdUpdated extends AbstractEvent {
 
     private Long reportId;
     private Long eventId;
-    private Long userId;
+    private String userId;
     private Long videoId;
     
     private Float longitude;

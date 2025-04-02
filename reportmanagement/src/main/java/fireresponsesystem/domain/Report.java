@@ -22,7 +22,7 @@ public class Report {
 
     private Long eventId;
 
-    private Long userId;
+    private String userId;
 
     private Float longitude;
 
@@ -34,7 +34,7 @@ public class Report {
 
     private Date uploadedAt;
 
-    private String status; // pending, success, failed, fire, nonfire
+    private String status; // pending, (success), failed, fire, nonfire
 
     @PostPersist
     public void onPostPersist() {

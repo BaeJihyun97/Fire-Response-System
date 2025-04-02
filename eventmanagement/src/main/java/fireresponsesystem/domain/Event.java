@@ -31,6 +31,8 @@ public class Event {
 
     private Date resolvedAt;
 
+    private boolean verified;
+
     @PostPersist
     public void onPostPersist() {
         // EventCreated eventCreated = new EventCreated(this);
@@ -172,6 +174,7 @@ public class Event {
         repository().findByEventId(updateEventTypeCommand.getEventId()).ifPresent(event->{
 
             event.setEventType(updateEventTypeCommand.getEventType());
+            event.setVerified(true);
             repository().save(event);
 
             if(updateEventTypeCommand.getEventType().equals("fire")) {
@@ -192,6 +195,7 @@ public class Event {
         repository().findByEventId(updateStatusCommand.getEventId()).ifPresent(event->{
 
             event.setStatus(updateStatusCommand.getStatus());
+            event.setResolvedAt(new Date());
             repository().save(event);
 
             StatusUpdated statusUpdated = new StatusUpdated(this);

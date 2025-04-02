@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.nio.charset.StandardCharsets;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import org.springframework.beans.factory.annotation.Autowired;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -32,6 +33,9 @@ public class PolicyHandler {
 
             Map<String, Object> payloadMap = (Map<String, Object>) message.getPayload();
 
+            // ObjectMapper 설정 추가
+            objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            objectMapper.configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true);
             
             Object tsObj = payloadMap.get("timestamp");
             if(tsObj instanceof String) {

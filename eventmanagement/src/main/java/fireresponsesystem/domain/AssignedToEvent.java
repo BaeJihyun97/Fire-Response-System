@@ -20,6 +20,7 @@ public class AssignedToEvent extends AbstractEvent {
     private Float latitude;
     private String status;
     private String eventType;
+    private String userId;
     private Date createdAt;
     private Date resolvedAt;
 

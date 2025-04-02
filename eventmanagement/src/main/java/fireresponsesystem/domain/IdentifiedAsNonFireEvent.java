@@ -11,7 +11,10 @@ import lombok.*;
 @ToString
 public class IdentifiedAsNonFireEvent extends AbstractEvent {
 
-    private Long id;
+    private String eventId;
+    private Float longitude;
+    private Float latitude;
+    private boolean verified;
 
     public IdentifiedAsNonFireEvent(Event aggregate) {
         super(aggregate);

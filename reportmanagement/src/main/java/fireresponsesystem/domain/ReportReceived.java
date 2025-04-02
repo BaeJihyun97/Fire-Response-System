@@ -12,7 +12,7 @@ import lombok.*;
 public class ReportReceived extends AbstractEvent {
 
     private Long reportId;
-    private Long userId;
+    private String userId;
     private Float longitude;
     private Float latitude;
     private Long videoId;

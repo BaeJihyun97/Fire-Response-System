@@ -18,6 +18,7 @@ public class IdentifiedAsFireEvent extends AbstractEvent {
     private String eventType;
     private Date createdAt;
     private Date resolvedAt;
+    private boolean verified;
 
     public IdentifiedAsFireEvent(Event aggregate) {
         super(aggregate);

@@ -31,7 +31,8 @@ public class SecurityConfig {
             .authorizeExchange(auth -> auth
                 .pathMatchers("/signup", "/login", "/reports/receivereport", "/videos/upload", "/events/**").permitAll()
                 // .pathMatchers("/**").permitAll()
-                .anyExchange().authenticated()
+                //.anyExchange().authenticated()
+                .anyExchange().permitAll()
             )
             .exceptionHandling(eh -> eh
                 .authenticationEntryPoint((exchange, ex) ->
@@ -40,7 +41,7 @@ public class SecurityConfig {
                     })
                 )
             )
-            .oauth2Login(oauth2 -> {})
+            //.oauth2Login(oauth2 -> {})
             // .oauth2ResourceServer(oauth2 -> oauth2.jwt())
             .build();
     }

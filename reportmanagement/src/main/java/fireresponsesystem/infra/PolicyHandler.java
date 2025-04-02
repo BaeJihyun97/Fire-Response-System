@@ -94,11 +94,21 @@ public class PolicyHandler {
 
             System.out.println("Discarded message");
             System.out.println("Discarded message: " + message.getHeaders().get("type"));
-            System.out.println("Discarded message: " + message.getHeaders().get("type").getClass());
-            byte[] rawType = (byte[]) message.getHeaders().get("type");
-            String decodedType = new String(rawType, StandardCharsets.UTF_8);
-            System.out.println("Discarded message: " + decodedType);
-            System.out.println(decodedType.equals("VideoSaved"));
+            
+            // null 체크 추가
+            Object type = message.getHeaders().get("type");
+            if (type != null) {
+                System.out.println("Discarded message type class: " + type.getClass());
+                if (type instanceof byte[]) {
+                    byte[] rawType = (byte[]) type;
+                    String decodedType = new String(rawType, StandardCharsets.UTF_8);
+                    System.out.println("Discarded message: " + decodedType);
+                    System.out.println(decodedType.equals("VideoSaved"));
+                }
+            } else {
+                System.out.println("Discarded message type is null");
+            }
+            
             System.out.println("Discarded message: " + message.getPayload());
             System.out.println("Discarded message: " + message.getPayload().getClass());
         };
