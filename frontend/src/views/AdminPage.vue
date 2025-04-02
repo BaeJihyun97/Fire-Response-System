@@ -664,6 +664,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { eventsApi } from '../services/api';
 import { 
   AlertTriangle, 
   Archive,
@@ -696,106 +697,13 @@ const activeTab = ref('active');
 const showFullRiskMap = ref(false);
 
 // 진행 중인 화재 제보
-const activeReports = ref([
-  {
-    id: '1',
-    coordinates: { lat: 37.498095, lng: 127.027610 },
-    timestamp: '2024-03-31T14:30:00',
-    status: '진행 중',
-    isFire: true,
-    riskLevel: '높음',
-    verified: true,
-    metadata: {
-      likes: 45,
-      comments: 12,
-      videoUrl: 'https://team05sa.blob.core.windows.net/videos/38/38.mp4',
-      imageUrl: 'https://example.com/image1.jpg'
-    }
-  },
-  {
-    id: '2',
-    coordinates: { lat: 37.526120, lng: 126.925771 },
-    timestamp: '2024-03-31T15:00:00',
-    status: '진행 중',
-    isFire: true,
-    riskLevel: '중간',
-    verified: true,
-    metadata: {
-      likes: 32,
-      comments: 8,
-      videoUrl: 'https://team05sa.blob.core.windows.net/videos/39/39.mp4',
-      imageUrl: 'https://example.com/image2.jpg'
-    }
-  }
-]);
+const activeReports = ref([]);
 
-// 검토 중인 제보 (likes가 50개 이상)
-const pendingReports = ref([
-  {
-    id: '3',
-    coordinates: { lat: 37.566535, lng: 126.977969 },
-    timestamp: new Date(Date.now() - 600000).toISOString(), // 10분 전
-    status: '진행 중',
-    isFire: false,
-    riskLevel: '낮음',
-    verified: false,
-    metadata: {
-      likes: 67,
-      comments: 12,
-      videoUrl: '',
-      imageUrl: 'https://placehold.co/600x400'
-    }
-  },
-  {
-    id: '4',
-    coordinates: { lat: 37.538617, lng: 127.094454 },
-    timestamp: new Date(Date.now() - 3600000).toISOString(), // 1시간 전
-    status: '진행 중',
-    isFire: false,
-    riskLevel: '낮음',
-    verified: false,
-    metadata: {
-      likes: 89,
-      comments: 23,
-      videoUrl: '',
-      imageUrl: 'https://placehold.co/400x200'
-    }
-  }
-]);
+// 검토 중인 제보
+const pendingReports = ref([]);
 
 // 종결된 화재 제보
-const closedReports = ref([
-  {
-    id: '5',
-    coordinates: { lat: 37.566535, lng: 126.977969 },
-    timestamp: '2024-03-30T10:00:00',
-    status: '종료',
-    isFire: true,
-    riskLevel: '높음',
-    verified: true,
-    metadata: {
-      likes: 89,
-      comments: 34,
-      videoUrl: '',
-      imageUrl: 'https://example.com/image5.jpg'
-    }
-  },
-  {
-    id: '6',
-    coordinates: { lat: 37.538617, lng: 127.094454 },
-    timestamp: '2024-03-29T15:30:00',
-    status: '종료',
-    isFire: true,
-    riskLevel: '중간',
-    verified: true,
-    metadata: {
-      likes: 56,
-      comments: 18,
-      videoUrl: '',
-      imageUrl: 'https://example.com/image6.jpg'
-    }
-  }
-]);
+const closedReports = ref([]);
 
 // 상태 변경 모달 관련 상태
 const showStatusModal = ref(false);
@@ -848,6 +756,59 @@ const formatTime = (timestamp) => {
     month: 'long',
     day: 'numeric'
   });
+};
+
+// 이벤트 데이터 로드
+const loadEvents = async () => {
+  try {
+    const response = await eventsApi.getEvents();
+    const events = response.data._embedded?.events || [];
+    
+    // 각 상태별로 이벤트 필터링
+    activeReports.value = events.filter(event => 
+      event.status === 'active' && event.eventType === 'fire'
+    ).map(event => ({
+      id: event._links.self.href.split('/').pop(),
+      coordinates: { lat: event.latitude, lng: event.longitude },
+      timestamp: event.createdAt,
+      status: '진행 중',
+      isFire: true,
+      riskLevel: '높음',
+      verified: true
+    }));
+    
+    pendingReports.value = events.filter(event => 
+      event.status === 'pending'
+    ).map(event => ({
+      id: event._links.self.href.split('/').pop(),
+      coordinates: { lat: event.latitude, lng: event.longitude },
+      timestamp: event.createdAt,
+      status: '진행 중',
+      isFire: false,
+      riskLevel: '낮음',
+      verified: false
+    }));
+    
+    closedReports.value = events.filter(event => 
+      event.status === 'closed'
+    ).map(event => ({
+      id: event._links.self.href.split('/').pop(),
+      coordinates: { lat: event.latitude, lng: event.longitude },
+      timestamp: event.createdAt,
+      status: '종료',
+      isFire: true,
+      riskLevel: '중간',
+      verified: true
+    }));
+    
+    // 모든 제보의 위치 정보 로드
+    for (const report of [...activeReports.value, ...pendingReports.value, ...closedReports.value]) {
+      await loadLocationInfo(report);
+      report.time = formatTime(report.timestamp);
+    }
+  } catch (error) {
+    console.error('이벤트 데이터 로드 실패:', error);
+  }
 };
 
 // 화재 상태 변경 처리
@@ -1076,12 +1037,7 @@ const navigateToFullRiskMap = () => {
 // 컴포넌트 마운트 시 초기화
 onMounted(async () => {
   console.log('AdminPage 마운트됨');
-  
-  // 모든 제보의 위치 정보 로드
-  for (const report of [...activeReports.value, ...pendingReports.value, ...closedReports.value]) {
-    await loadLocationInfo(report);
-    report.time = formatTime(report.timestamp);
-  }
+  await loadEvents();
 });
 </script>
 

@@ -217,10 +217,19 @@ export const postApi = {
   deletePost: (id) => axios.delete(`/posts/${id}`)
 };
 
+// 이벤트 API
+export const eventsApi = {
+  getEvents: () => axios.get('/events'),
+  getEvent: (id) => axios.get(`/events/${id}`),
+  updateEventType: (id, type) => axios.put(`/events/${id}/updateeventtype`, { eventType: type }),
+  updateStatus: (id, status) => axios.put(`/events/${id}/updatestatus`, { status: status })
+};
+
 export default {
   eventApi: eventApiService,
   reportApi: reportApiService,
   videoApi: videoApiService,
   authApi,
-  postApi
+  postApi,
+  eventsApi
 };
