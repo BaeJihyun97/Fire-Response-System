@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: gateway
+  name: reportmanagement
   labels:
-    app: gateway
+    app: reportmanagement
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: gateway
+      app: reportmanagement
   template:
     metadata:
       labels:
-        app: gateway
+        app: reportmanagement
     spec:
       containers:
-        - name: gateway
-          image: team05registry.azurecr.io/gateway2:v2
+        - name: reportmanagement
+          image: team05registry.azurecr.io/reportmanagement:v5
           ports:
             - containerPort: 8080

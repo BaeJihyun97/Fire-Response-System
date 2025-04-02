@@ -1,16 +1,101 @@
-routing-expression: >
-  T(byte[]).isInstance(headers['type'])
-  ? (new String((byte[]) headers['type']) == 'VideoSaved' ? 'wheneverVideoSaved_VideoIdUpdate' : 'discardFunction') 
-  : (headers['type'] == 'VideoAnalysisFailed' ? 'wheneverVideoAnalysisFailed_UpdateReport' 
-  : headers['type'] == 'IdentifiedAsNonFireEvent' ? 'wheneverIdentifiedAsNonFireEvent_UpdateReport' 
-  : headers['type'] == 'EventCreated' ? 'wheneverEventCreated_EventIdUpdate' 
-  : headers['type'] == 'AssignedToEvent' ? 'wheneverAssignedToEvent_EventIdUpdate' 
-  : headers['type'] == 'VideoSaved' ? 'wheneverVideoSaved_VideoIdUpdate' 
-  : 'discardFunction')
+
+http POST 20.214.119.42:82/reports/receivereport userId=1 description="test1" longitude=0.3 latitude=1.3
+http POST reportmanagement:8080/reports/receivereport userId=1 description="test1" longitude=0.3 latitude=1.3
+http POST 20.249.194.117:8080/reports/receivereport userId=1 description="test1" longitude=0.3 latitude=1.3
+
+curl -X POST http://localhost:8088/realms/my-realm/protocol/openid-connect/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "client_id=spring-gateway-client" \
+  -d "client_secret=oP5iWXLY576JPew6EWKudcpfN2nQcVOp" \
+  -d "grant_type=password" \
+  -d "username=alice" \
+  -d "password=alice02"
 
 
-(T(byte[]).isInstance(headers['type']) ? new String((byte[]) headers['type']) : headers['type'])
+http POST http://20.249.194.117:8080/reports/receivereport \
+  Accept:application/json \
+  Authorization:"Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI2RFoyRUg5UDF6YW9pNnpfWGdhLUdPejRINEY2YzU3REpXQmIzc1l1VGNZIn0.eyJleHAiOjE3NDM1NTQ3MDMsImlhdCI6MTc0MzU1NDQwMywianRpIjoiN2UzZGI4MjktMGUwZS00ZmNiLWEyYmYtMDM4ZTU5ZTI4NDY2IiwiaXNzIjoiaHR0cDovL2tleWNsb2FrLjIwLjI0OS43MS4yNTEubmlwLmlvL3JlYWxtcy9teS1yZWFsbSIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiI2ZTE3ZDU4ZC05YmZlLTQ1ODAtYWYxMi03ZWI0NGM1NTZmYjMiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJzcHJpbmctZ2F0ZXdheS1jbGllbnQiLCJzZXNzaW9uX3N0YXRlIjoiMjAxNDI4YzItYmVkMS00ZmZhLTg0OTQtNDBmZWE3NzUwOWIwIiwiYWNyIjoiMSIsImFsbG93ZWQtb3JpZ2lucyI6WyIqIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJvZmZsaW5lX2FjY2VzcyIsInVtYV9hdXRob3JpemF0aW9uIiwiZGVmYXVsdC1yb2xlcy1teS1yZWFsbSJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoiZW1haWwgcHJvZmlsZSIsInNpZCI6IjIwMTQyOGMyLWJlZDEtNGZmYS04NDk0LTQwZmVhNzc1MDliMCIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJuYW1lIjoidGVzdDlmIHRlc3Q5bCIsInByZWZlcnJlZF91c2VybmFtZSI6InRlc3Q5IiwiZ2l2ZW5fbmFtZSI6InRlc3Q5ZiIsImZhbWlseV9uYW1lIjoidGVzdDlsIiwiZW1haWwiOiJ0ZXN0MUBleGFtcGxlLmNvbSJ9.c5RdQaG5CI2vuOjraIExXnyJbAZ35R7n8tU4lcB5MNbVDEJrlXmkLUccXUWuIf_UxaNcYi8MM49yu_y4n7r0bdBpsVFrcQvQNopct1QgJ2oVB8li3pXqmnVqQuJh03OBCudQX3cPuca317C7L1j0ABerGopEnvdT1JB1omJVayJBL8w5M6ymQAOam39CNWauTwXnzSTbtIIas68wtGng-eNZC66KyB8MPIlEWTLMtHu0Sje81JpnChM8lN9LFXV-FagjtUq9T19m42vWCUUswQ1e4MvvOpASKjYLsUT8IlNPUnNICA5m5yIP2BlnhV9pwBK4n9RUjrBBsm9sWIusdw" \
+  userId=1 description="test1" longitude=0.3 latitude=1.3
 
-(byte[]) message.getHeaders().get("type");
 
-new String((byte[])headers['type'], StandardCharsets.UTF_8);
+http POST http://20.249.194.117:8080/reports/receivereport \
+  userId=1 description="test1" longitude=0.3 latitude=1.3
+
+
+
+http POST http://20.249.194.117:8080/signup \
+  username=test9 \
+  password=test9 \
+  email=test1@example.com \
+  firstname=test9f \
+  lastname=test9l
+
+http POST http://20.249.194.117:8080/login \
+  username=test9 \
+  password=test9 \
+
+
+  Content-Type:application/x-www-form-urlencoded\
+   Accept: application/json \
+
+http POST http://localhost:8080/realms/my-realm/protocol/openid-connect/token \
+  grant_type=password \
+  client_id=spring-gateway-client \
+  client_secret=oP5iWXLY576JPew6EWKudcpfN2nQcVOp \
+  username=test1 \
+  password=test1 \
+
+az aks get-credentials --resource-group team05 --name team05-aks
+
+
+az acr create --resource-group team05 --name team05registry --sku Basic
+
+az aks update -n team05-aks -g team05 --attach-acr team05registry
+
+az acr login --name team05registry --expose-token
+
+az acr login --name team05registry
+
+mvn clean package
+
+docker build  --platform linux/amd64 --no-cache -t team05registry.azurecr.io/gateway2:v2 .
+docker push team05registry.azurecr.io/gateway2:v2
+
+docker build -t team05registry.azurecr.io/gateway:v1 .
+docker push team05registry.azurecr.io/gateway:v1
+
+docker build -t team05registry.azurecr.io/reportmanagement:v1 .
+docker push team05registry.azurecr.io/reportmanagement:v1
+
+docker build   --platform linux/amd64 --no-cache -t  team05registry.azurecr.io/eventmanagement:v1 .
+docker push team05registry.azurecr.io/eventmanagement:v1
+
+
+# 1. 로컬에 이미지 없으면 pull (스킵 가능)
+docker pull quay.io/keycloak/keycloak:24.0.1
+# 2. 레지스트리 주소로 태깅 (항상 필요)
+docker tag quay.io/keycloak/keycloak:24.0.1 team05registry.azurecr.io/keycloak:24.0.1
+docker push team05registry.azurecr.io/keycloak:24.0.1
+
+
+kubectl create deploy gateway --image=team05registry.azurecr.io/gateway:v1
+kubectl create deploy reportmanagement --image=team05registry.azurecr.io/reportmanagement:v1
+kubectl create deploy eventmanagement --image=team05registry.azurecr.io/eventmanagement:v1
+kubectl create deploy keycloak --image=team05registry.azurecr.io/keycloak
+
+
+
+
+
+http://4.230.151.96:8080/
+
+20.249.169.80
+
+
+
+
+
+
+http GET http://localhost:8088/reports \
+Accept:application/json \
+Authorization:"Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJoLS1uSUFOYXhhQ2FGLVFEdG5YUVA4UjBZUXU4MXBFT28tcERRMDREQ2ZRIn0.eyJleHAiOjE3NDM0ODY1NDksImlhdCI6MTc0MzQ4NjI0OSwianRpIjoiZDA2MTEyZjAtOGNhMi00ZGM4LTg2NmQtNWNmMTE1OTNmZWVkIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3JlYWxtcy9teS1yZWFsbSIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiI2MTgwMDMwYi00NjE2LTQ1YWQtYmE5NC05ZmNhZWIxMWZlODkiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJzcHJpbmctZ2F0ZXdheS1jbGllbnQiLCJzZXNzaW9uX3N0YXRlIjoiMmExM2VjZmUtNjJmOC00YTYxLWJiMjMtYzAxYzQzZGM1Y2ZjIiwiYWNyIjoiMSIsImFsbG93ZWQtb3JpZ2lucyI6WyIqIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJvZmZsaW5lX2FjY2VzcyIsInVtYV9hdXRob3JpemF0aW9uIiwiVVNFUiIsImRlZmF1bHQtcm9sZXMtbXktcmVhbG0iXX0sInJlc291cmNlX2FjY2VzcyI6eyJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6InByb2ZpbGUgZW1haWwiLCJzaWQiOiIyYTEzZWNmZS02MmY4LTRhNjEtYmIyMy1jMDFjNDNkYzVjZmMiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwibmFtZSI6InRlc3Q5ZiB0ZXN0OWwiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJ0ZXN0MTAiLCJnaXZlbl9uYW1lIjoidGVzdDlmIiwiZmFtaWx5X25hbWUiOiJ0ZXN0OWwiLCJlbWFpbCI6InRlc3QxMEBleGFtcGxlLmNvbSJ9.fiKu_GcI6EUs9qH4QdLUzb0yCJawcxEW0MNQvjBTEsDvXFzu-YJwUb9XbFA1hL_pLGfL5WcWvjkQO2f8--Ib13EydOixjrDFla3q6Gg1GTzWkxY4d_THLEkS4O5YdaV8VdW0e_JNqT8QvWGzWWJgRnOTp-fIpFxoFy2ZlWo3nJbAHlcDdXsgQ7NUmn0uiRg4XE1RwQ9wC8NHmhBwDxxyye-FJQjbpAs8BKulfIOlMwddaiiJw5nOAHqa02tmfMHYjDegwx8Nm4CGa6vKqpKdglmjkk3h7KSJ0qo0J-wS9ixNIM2EWafrk_OwrTw8p2hgDkpcyxYTv-CAUQA2TdyYXg"

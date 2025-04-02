@@ -21,7 +21,7 @@ public class ReportController {
     ReportRepository reportRepository;
 
     @RequestMapping(
-        value = "reports//receivereport",
+        value = "reports/receivereport",
         method = RequestMethod.POST,
         produces = "application/json;charset=UTF-8"
     )

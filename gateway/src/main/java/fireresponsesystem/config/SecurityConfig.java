@@ -29,7 +29,8 @@ public class SecurityConfig {
         return http
             .csrf(csrf -> csrf.disable())
             .authorizeExchange(auth -> auth
-                .pathMatchers("/signup", "/login").permitAll()
+                .pathMatchers("/signup", "/login", "/reports/receivereport", "/videos/upload", "/events/**").permitAll()
+                // .pathMatchers("/**").permitAll()
                 .anyExchange().authenticated()
             )
             .exceptionHandling(eh -> eh
@@ -40,7 +41,7 @@ public class SecurityConfig {
                 )
             )
             .oauth2Login(oauth2 -> {})
-            .oauth2ResourceServer(oauth2 -> oauth2.jwt())
+            // .oauth2ResourceServer(oauth2 -> oauth2.jwt())
             .build();
     }
 

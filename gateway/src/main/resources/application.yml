@@ -109,7 +109,7 @@ spring:
         - id: reportmanagement
           uri: http://reportmanagement:8080
           predicates:
-            - Path=/reports/**, 
+            - Path=/reports/**, /reports//**, 
         - id: videoproccessing
           uri: http://videoproccessing:8080
           predicates:
