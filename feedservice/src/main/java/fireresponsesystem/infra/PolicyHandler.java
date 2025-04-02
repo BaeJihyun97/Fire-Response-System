@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.ZoneOffset;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 //<<< Clean Arch / Inbound Adaptor
 @Service
@@ -28,9 +29,31 @@ public class PolicyHandler {
             Object rawTypeObj = message.getHeaders().get("type");
             String type = rawTypeObj instanceof byte[] ? new String((byte[]) rawTypeObj, StandardCharsets.UTF_8).trim() : rawTypeObj.toString();
             System.out.println("type: " + type);
+            if (!"EventCreated".equals(type)  && !"FaceBlurred".equals(type) && !"IdentifiedAsFireEvent".equals(type)) {
+                return;
+            }
 
-            Map<String, Object> payloadMap = (Map<String, Object>) message.getPayload();
-
+            // if payload of the message is in byte, convert it to string
+            Map<String, Object> payloadMap;
+            if (message.getPayload() instanceof byte[]) {
+                String jsonString = new String((byte[]) message.getPayload(), StandardCharsets.UTF_8);
+                try {
+                    payloadMap = objectMapper.readValue(jsonString, Map.class);
+                } catch (JsonProcessingException e) {
+                    System.out.println("Failed to parse JSON from byte array: " + e.getMessage());
+                    e.printStackTrace();
+                    return;
+                }
+            } else {
+                try {
+                    payloadMap = (Map<String, Object>) message.getPayload();
+                } catch (Exception e) {
+                    System.out.println("Failed to cast payload to Map: " + e.getMessage());
+                    e.printStackTrace();
+                    return;
+                }
+            }
+            System.out.println("Decoded payloadMap: " + payloadMap);
             Object tsObj = payloadMap.get("timestamp");
             if(tsObj instanceof String) {
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS");
@@ -41,19 +64,25 @@ public class PolicyHandler {
 
             switch (type) {
                 case "EventCreated":
-                    EventCreated eventCreated = objectMapper.convertValue(payloadMap, EventCreated.class);
-                    Post.publishPost(eventCreated);
+                    try {
+                        EventCreated eventCreated = objectMapper.convertValue(payloadMap, EventCreated.class);
+                        Post.publishPost(eventCreated);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    // EventCreated eventCreated = objectMapper.convertValue(payloadMap, EventCreated.class);
+                    // Post.publishPost(eventCreated);
                     break;
 
-                case "FaceBlurred":
-                    FaceBlurred faceBlurred = objectMapper.convertValue(payloadMap, FaceBlurred.class);
-                    Post.updatePost(faceBlurred);
-                    break;
+                // case "FaceBlurred":
+                //     FaceBlurred faceBlurred = objectMapper.convertValue(payloadMap, FaceBlurred.class);
+                //     Post.updatePost(faceBlurred);
+                //     break;
 
-                case "IdentifiedAsFireEvent":
-                    IdentifiedAsFireEvent identifiedAsFireEvent = objectMapper.convertValue(payloadMap, IdentifiedAsFireEvent.class);
-                    Post.updatePost(identifiedAsFireEvent);
-                    break;
+                // case "IdentifiedAsFireEvent":
+                //     IdentifiedAsFireEvent identifiedAsFireEvent = objectMapper.convertValue(payloadMap, IdentifiedAsFireEvent.class);
+                //     Post.updatePost(identifiedAsFireEvent);
+                //     break;
 
                 default:
                     System.out.println("Discarded message: " + message);

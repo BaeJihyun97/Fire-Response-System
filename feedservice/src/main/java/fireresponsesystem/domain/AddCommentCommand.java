@@ -9,7 +9,7 @@ public class AddCommentCommand {
 
     private Long postId;
 
-    private Long userId;
+    private String userId;
 
     private String content;
 

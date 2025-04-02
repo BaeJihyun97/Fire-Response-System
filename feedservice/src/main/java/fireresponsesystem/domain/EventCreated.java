@@ -10,11 +10,11 @@ import lombok.*;
 public class EventCreated extends AbstractEvent {
 
     private Long eventId;
-    private Long userId;
+    private String userId;
     private Double longitude;
     private Double latitude;
     private String status;
     private String eventType;
     private Date createdAt;
-    private Date resolvedAt;
+    private Optional<Date> resolvedAt;
 }

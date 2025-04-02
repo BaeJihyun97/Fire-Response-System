@@ -21,7 +21,7 @@ public class Comment {
     @Column(name = "post_id")
     private Long postId;
 
-    private Long userId;
+    private String userId;
 
     private String comment;
 

@@ -29,13 +29,13 @@ public class Post {
     @Column(nullable = true)
     private String blurredVideoUri;
 
-    private Long userId;
+    private String userId;
 
     private Long eventId;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "varchar(255) default 'NON_FIRE'")
-    private EventType eventType = EventType.NON_FIRE;
+    @Column(columnDefinition = "varchar(255) default 'EventCreated'")
+    private EventType eventType = EventType.EventCreated;
 
     @Column(nullable = true)
     private Double longitude;
@@ -99,7 +99,7 @@ public class Post {
 
     //>>> Clean Arch / Port Method
     //<<< Clean Arch / Port Method
-    public void react(Long userId) {
+    public void react(String userId) {
         if (!hasUserReacted(userId)) {
             Reaction reaction = Reaction.create(this, userId);
             reactionRepository().save(reaction);
@@ -113,7 +113,7 @@ public class Post {
         }
     }
 
-    public boolean hasUserReacted(Long userId) {
+    public boolean hasUserReacted(String userId) {
         return this.getReactions().stream()
             .anyMatch(reaction -> reaction.getUserId().equals(userId));
     }

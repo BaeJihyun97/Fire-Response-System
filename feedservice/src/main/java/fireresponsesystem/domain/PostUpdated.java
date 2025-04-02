@@ -13,7 +13,7 @@ public class PostUpdated extends AbstractEvent {
 
     private Long postId;
     private String blurredVideoUri;
-    private Long userId;
+    private String userId;
     private Long eventId;
     private List<String> comments;
     private Integer reactionCount;

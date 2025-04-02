@@ -17,7 +17,7 @@ public class Reaction {
     private Long postId;
 
     @Column(name = "user_id")
-    private Long userId;
+    private String userId;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -26,7 +26,7 @@ public class Reaction {
         this.createdAt = LocalDateTime.now();
     }
 
-    public static Reaction create(Post post, Long userId) {
+    public static Reaction create(Post post, String userId) {
         Reaction reaction = new Reaction();
         reaction.setPostId(post.getPostId());
         reaction.setUserId(userId);

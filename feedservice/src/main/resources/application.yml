@@ -25,7 +25,7 @@ spring:
           brokers: localhost:9092
       bindings:
           functionRouter-in-0:
-            group: feedservice
+            group: feedservice-${random.value}
             destination: fireresponsesystem
             contentType: application/json
           producer-out-0:
@@ -64,7 +64,7 @@ spring:
           brokers: localhost:9092
       bindings:
           functionRouter-in-0:
-            group: feedservice
+            group: feedservice-${random.value}
             destination: fireresponsesystem
             contentType: application/json
           producer-out-0:

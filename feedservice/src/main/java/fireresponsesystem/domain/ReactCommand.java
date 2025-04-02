@@ -9,6 +9,6 @@ public class ReactCommand {
 
     private Long postId;
 
-    private Long userId;
+    private String userId;
 
 }

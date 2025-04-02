@@ -6,6 +6,10 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.util.Optional;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.stream.Collectors;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,6 +25,9 @@ public class PostController {
 
     @Autowired
     CommentRepository commentRepository;
+
+    @Autowired
+    ReactionRepository reactionRepository;
 
     @RequestMapping(
         value = "posts/{postId}/comments",
@@ -53,6 +60,32 @@ public class PostController {
         post.react(reactCommand.getUserId());
         postRepository.save(post);
         return post;
+    }
+
+    @RequestMapping(
+        value = "posts",
+        method = RequestMethod.GET,
+        produces = "application/json;charset=UTF-8"
+    )
+    public List<Map<String, Object>> getPostsWithUserReactions(
+        @RequestParam(value = "userId", required = false) String userId,
+        HttpServletRequest request,
+        HttpServletResponse response
+    ) {
+        List<Post> posts = postRepository.findAll();
+        return posts.stream().map(post -> {
+            Map<String, Object> postMap = new HashMap<>();
+            postMap.put("postId", post.getPostId());
+            postMap.put("userId", post.getUserId());
+            postMap.put("eventId", post.getEventId());
+            postMap.put("eventType", post.getEventType());
+            postMap.put("longitude", post.getLongitude());
+            postMap.put("latitude", post.getLatitude());
+            postMap.put("blurredVideoUri", post.getBlurredVideoUri());
+            postMap.put("reactionCount", post.getReactionCount());
+            postMap.put("hasUserReacted", userId != null ? post.hasUserReacted(userId) : false);
+            return postMap;
+        }).collect(Collectors.toList());
     }
 
 }
