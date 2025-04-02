@@ -26,7 +26,7 @@ spring:
           brokers: localhost:9092
       bindings:
           functionRouter-in-0:              
-            group: eventmanagement
+            group: eventmanagement-${random.uuid}
             destination: fireresponsesystem
             contentType: application/json  
           producer-out-0:
@@ -56,14 +56,13 @@ spring:
   cloud:
     function:
       routing-expression: "headers['type'] != null ? 'routeMessage' : 'discardFunction'"
-      # "headers['type']=='ReportReceived' ? 'wheneverReportReceived_CreateEvent' : headers['type']=='ReportReceived' ? 'wheneverReportReceived_AssignToEvent' : headers['type']=='VideoAnalyzed' ? 'wheneverVideoAnalyzed_IdentifyAsFireEvent' : headers['type']=='Reacted' ? 'wheneverReacted_IdentifyAsFireEvent' : 'discardFunction'"
     stream:
       kafka:
         binder:
           brokers: my-kafka:9092
       bindings:
           functionRouter-in-0:              
-            group: eventmanagement
+            group: eventmanagement-${random.uuid}
             destination: fireresponsesystem
             contentType: application/json  
           producer-out-0:

@@ -1,0 +1,97 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-config
+data:
+  realm-config.json: |
+    {
+      "realm": "my-realm",
+      "enabled": true,
+      "clients": [
+        {
+          "clientId": "spring-gateway-client",
+          "secret": "oP5iWXLY576JPew6EWKudcpfN2nQcVOp",
+          "enabled": true,
+          "standardFlowEnabled": true,
+          "redirectUris": ["http://4.230.151.96:8080/login/oauth2/code/keycloak"]
+        }
+      ]
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  labels:
+    app: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+        - name: keycloak
+          image: quay.io/keycloak/keycloak:24.0.1
+          args: ["start-dev"]
+          ports:
+            - containerPort: 8080
+          env:
+            - name: KEYCLOAK_ADMIN
+              value: "admin"
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              value: "admin"
+            - name: KC_HTTP_ENABLED
+              value: "true"
+            - name: KC_PROXY
+              value: "edge"
+            - name: KC_HOSTNAME_URL
+              value: "http://4.230.151.96:8080"
+            - name: KC_HOSTNAME_STRICT
+              value: "false"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+spec:
+  selector:
+    app: keycloak
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: LoadBalancer
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: keycloak-config-cli
+spec:
+  template:
+    spec:
+      containers:
+        - name: keycloak-config-cli
+          image: adorsys/keycloak-config-cli:latest
+          env:
+            - name: KEYCLOAK_URL
+              value: "http://keycloak:8080"
+            - name: KEYCLOAK_USER
+              value: "admin"
+            - name: KEYCLOAK_PASSWORD
+              value: "admin"
+            - name: IMPORT_FILES_LOCATIONS
+              value: "/config"
+          volumeMounts:
+            - name: config-volume
+              mountPath: /config
+      restartPolicy: OnFailure
+      volumes:
+        - name: config-volume
+          configMap:
+            name: keycloak-config

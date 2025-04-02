@@ -4,80 +4,105 @@ server:
 ---
 # admin 접근용
 
+# keycloak:
+#   realm: my-realm
+#   auth-server-url: http://localhost:8080
+#   client-id: spring-gateway-client
+#   client-secret: oP5iWXLY576JPew6EWKudcpfN2nQcVOp
+#   admin-username: admin
+#   admin-password: admin
+
+# ---
+
+# spring:
+#   config:
+#     activate:
+#       on-profile: default
+#   security:
+#     oauth2:
+#       client:
+#         registration:
+#           keycloak:
+#             client-id: spring-gateway-client
+#             client-secret: oP5iWXLY576JPew6EWKudcpfN2nQcVOp
+#             authorization-grant-type: authorization_code
+#             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+#             scope: openid, profile, email
+#         provider:
+#           keycloak:
+#             issuer-uri: http://localhost:8080/realms/my-realm
+#   cloud:
+#     gateway:
+# #<<< API Gateway / Routes
+#       routes:
+#         - id: reportmanagement
+#           uri: http://localhost:8082
+#           predicates:
+#             - Path=/reports/**, 
+#         - id: videoproccessing
+#           uri: http://localhost:8083
+#           predicates:
+#             - Path=/videoAnalyses/**, /videos/**, 
+#         - id: eventmanagement
+#           uri: http://localhost:8084
+#           predicates:
+#             - Path=/events/**, 
+#         - id: aianalysis
+#           uri: http://localhost:8085
+#           predicates:
+#             - Path=/aiAnalyses/**, 
+#         - id: feedservice
+#           uri: http://localhost:8086
+#           predicates:
+#             - Path=/posts/**, 
+#         - id: notification
+#           uri: http://localhost:8087
+#           predicates:
+#             - Path=/notifications/**, 
+#         - id: frontend
+#           uri: http://localhost:8089
+#           predicates:
+#             - Path=/**
+
+#       globalcors:
+#         corsConfigurations:
+#           '[/**]':
+#             allowedOrigins:
+#               - "http://localhost"
+#             allowedMethods:
+#               - "*"
+#             allowedHeaders:
+#               - "*"
+#             allowCredentials: true
+
+
+---
 keycloak:
   realm: my-realm
-  auth-server-url: http://localhost:8080
+  auth-server-url: http://keycloak.20.249.71.251.nip.io
   client-id: spring-gateway-client
-  client-secret: oP5iWXLY576JPew6EWKudcpfN2nQcVOp
+  client-secret: La5nvGscHxnqXx67sjUPM6eMLW25g4cB
   admin-username: admin
   admin-password: admin
-
 ---
 
 spring:
-  profiles: default
+  config:
+    activate:
+      on-profile: docker
   security:
     oauth2:
       client:
         registration:
           keycloak:
             client-id: spring-gateway-client
-            client-secret: oP5iWXLY576JPew6EWKudcpfN2nQcVOp
+            client-secret: La5nvGscHxnqXx67sjUPM6eMLW25g4cB
             authorization-grant-type: authorization_code
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             scope: openid, profile, email
         provider:
           keycloak:
-            issuer-uri: http://localhost:8080/realms/my-realm
-  cloud:
-    gateway:
-#<<< API Gateway / Routes
-      routes:
-        - id: reportmanagement
-          uri: http://localhost:8082
-          predicates:
-            - Path=/reports/**, 
-        - id: videoproccessing
-          uri: http://localhost:8083
-          predicates:
-            - Path=/videoAnalyses/**, /videos/**, 
-        - id: eventmanagement
-          uri: http://localhost:8084
-          predicates:
-            - Path=/events/**, 
-        - id: aianalysis
-          uri: http://localhost:8085
-          predicates:
-            - Path=/aiAnalyses/**, 
-        - id: feedservice
-          uri: http://localhost:8086
-          predicates:
-            - Path=/posts/**, 
-        - id: notification
-          uri: http://localhost:8087
-          predicates:
-            - Path=/notifications/**, 
-        - id: frontend
-          uri: http://localhost:8089
-          predicates:
-            - Path=/**
-
-      globalcors:
-        corsConfigurations:
-          '[/**]':
-            allowedOrigins:
-              - "http://localhost"
-            allowedMethods:
-              - "*"
-            allowedHeaders:
-              - "*"
-            allowCredentials: true
-
-
----
-
-spring:
-  profiles: docker
+            issuer-uri: http://keycloak.20.249.71.251.nip.io/realms/my-realm
   cloud:
     gateway:
       routes:
@@ -113,7 +138,15 @@ spring:
         corsConfigurations:
           '[/**]':
             allowedOrigins:
-              - "*"
+              - "http://keycloak"
+              - "http://reportmanagement"
+              - "http://videoproccessing"
+              - "http://eventmanagement"
+              - "http://aianalysis"
+              - "http://feedservice"
+              - "http://notification"
+              - "http://frontend"
+              - "http://localhost"
             allowedMethods:
               - "*"
             allowedHeaders:
@@ -122,9 +155,3 @@ spring:
 
 server:
   port: 8080
-
-
----
-spring:
-  config:
-    import: optional:classpath:application-secret.yml

@@ -10,11 +10,15 @@ import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Mono;
 import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
+import org.springframework.beans.factory.annotation.Value;
 
 @Configuration
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
+    @Value("${keycloak.auth-server-url}")
+    private String keycloakBaseUrl;
+    
     @Bean
     public RestTemplate restTemplate() {
         return new RestTemplate();
@@ -42,7 +46,7 @@ public class SecurityConfig {
 
     @Bean
     public ReactiveJwtDecoder jwtDecoder() {
-        return NimbusReactiveJwtDecoder.withJwkSetUri("http://localhost:8080/realms/my-realm/protocol/openid-connect/certs").build();
+        return NimbusReactiveJwtDecoder.withJwkSetUri(keycloakBaseUrl+"/realms/my-realm/protocol/openid-connect/certs").build();
     }
 }
 

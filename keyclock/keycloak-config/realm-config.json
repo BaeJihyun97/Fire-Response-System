@@ -1,0 +1,13 @@
+{
+  "realm": "my-realm",
+  "enabled": true,
+  "clients": [
+    {
+      "clientId": "spring-gateway-client",
+      "secret": "oP5iWXLY576JPew6EWKudcpfN2nQcVOp",
+      "enabled": true,
+      "standardFlowEnabled": true,
+      "redirectUris": ["http://localhost:8080/login/oauth2/code/keycloak"]
+    }
+  ]
+}
