@@ -143,12 +143,22 @@
                 placeholder="화재 발생 위치"
                 readonly
               />
-              <button
-                @click="handleLocationClick"
-                class="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
-              >
-                <MapPin class="h-5 w-5" />
-              </button>
+              <div class="absolute right-3 top-3 flex space-x-2">
+                <button
+                  @click="showMapModal = true"
+                  class="text-gray-400 hover:text-gray-600"
+                  title="지도에서 선택"
+                >
+                  <Map class="h-5 w-5" />
+                </button>
+                <button
+                  @click="handleLocationClick"
+                  class="text-gray-400 hover:text-gray-600"
+                  title="현재 위치"
+                >
+                  <MapPin class="h-5 w-5" />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -175,12 +185,46 @@
           <span v-else>화재 제보하기</span>
         </button>
       </div>
+
+      <!-- 지도 모달 -->
+      <div v-if="showMapModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg w-full max-w-2xl mx-4">
+          <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+            <h3 class="text-lg font-medium">위치 선택</h3>
+            <button @click="showMapModal = false" class="text-gray-500 hover:text-gray-700">
+              <X class="h-5 w-5" />
+            </button>
+          </div>
+          <div class="p-4">
+            <div class="h-[400px] relative">
+              <div id="map" class="w-full h-full rounded-lg"></div>
+              <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white px-4 py-2 rounded-lg shadow-lg">
+                <p class="text-sm text-gray-600">지도에서 위치를 선택하세요</p>
+              </div>
+            </div>
+          </div>
+          <div class="p-4 border-t border-gray-200 flex justify-end space-x-2">
+            <button
+              @click="showMapModal = false"
+              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+            >
+              취소
+            </button>
+            <button
+              @click="confirmLocation"
+              class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+            >
+              선택 완료
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
+import { ref, onMounted, onBeforeUnmount, computed, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import {
   ChevronLeft,
@@ -189,7 +233,9 @@ import {
   Square,
   RefreshCw,
   MapPin,
-  Loader
+  Loader,
+  Map,
+  X
 } from 'lucide-vue-next';
 import { useNotificationStore } from '../stores/notificationStore';
 import { reportApiService, videoApiService } from '../services/api';
@@ -232,6 +278,11 @@ const reportData = ref({
   reportId: null,
   description: ''
 });
+
+// 지도 관련 변수 추가
+const showMapModal = ref(false);
+let map = null;
+let marker = null;
 
 // Keycloak 토큰에서 사용자 ID 추출 함수
 const getUserIdFromToken = () => {
@@ -517,6 +568,85 @@ const submitReport = async () => {
   }
 };
 
+// 지도 초기화 함수
+const initMap = () => {
+  if (!window.naver || !window.naver.maps) {
+    console.error('네이버 지도 API가 로드되지 않았습니다.');
+    return;
+  }
+
+  try {
+    // 지도 옵션 설정
+    const mapOptions = {
+      center: new window.naver.maps.LatLng(37.5665, 126.9780), // 서울시청
+      zoom: 11,
+      zoomControl: true,
+      zoomControlOptions: {
+        position: window.naver.maps.Position.TOP_RIGHT
+      }
+    };
+
+    // 지도 생성
+    map = new window.naver.maps.Map('map', mapOptions);
+
+    // 현재 위치가 있으면 마커 추가
+    if (reportData.value.coordinates) {
+      const { lat, lng } = reportData.value.coordinates;
+      const position = new window.naver.maps.LatLng(lat, lng);
+      marker = new window.naver.maps.Marker({
+        position: position,
+        map: map
+      });
+    }
+
+    // 클릭 이벤트 추가
+    window.naver.maps.Event.addListener(map, 'click', (e) => {
+      const position = e.latlng;
+      if (marker) {
+        marker.setPosition(position);
+      } else {
+        marker = new window.naver.maps.Marker({
+          position: position,
+          map: map
+        });
+      }
+      updateLocationInfo(position.lat(), position.lng());
+    });
+
+  } catch (err) {
+    console.error('지도 초기화 실패:', err);
+  }
+};
+
+// 위치 정보 업데이트 함수
+const updateLocationInfo = async (lat, lng) => {
+  try {
+    const address = await loadLocationInfo({ lat, lng });
+    reportData.value.coordinates = { lat, lng };
+    reportData.value.location = address;
+  } catch (error) {
+    console.error('위치 정보 업데이트 실패:', error);
+  }
+};
+
+// 위치 선택 확인 함수
+const confirmLocation = () => {
+  showMapModal.value = false;
+  if (map) {
+    map.destroy();
+    map = null;
+  }
+};
+
+// 지도 모달이 열릴 때 지도 초기화
+watch(showMapModal, (newValue) => {
+  if (newValue) {
+    nextTick(() => {
+      initMap();
+    });
+  }
+});
+
 // 컴포넌트 마운트 시 카메라 초기화
 onMounted(() => {
   initCamera();
@@ -535,6 +665,11 @@ onBeforeUnmount(() => {
   if (recordedVideoUrl.value) {
     URL.revokeObjectURL(recordedVideoUrl.value);
   }
+
+  if (map) {
+    map.destroy();
+    map = null;
+  }
 });
 </script>
 
@@ -548,5 +683,16 @@ onBeforeUnmount(() => {
 
 .animate-pulse {
   animation: pulse 1.5s infinite;
+}
+
+/* 지도 모달 스타일 */
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
 }
 </style>

@@ -207,7 +207,7 @@ const refreshData = async () => {
         timestamp: new Date().toISOString(),
         status: '진행 중',
         isFire: isFire,
-        riskLevel: '중간',
+        riskLevel: 'N/A',
         verified: false,
         metadata: {
           likes: event.reactionCount || 0,

@@ -27,15 +27,7 @@
           >
             화재 확인
           </button>
-          <button 
-            @click="activeTab = 'community'" 
-            :class="[
-              'tab',
-              activeTab === 'community' ? 'tab-active' : 'tab-inactive'
-            ]"
-          >
-            커뮤니티 제보
-          </button>
+          
         </div>
 
         <!-- 화재 확인 탭 -->
