@@ -1,10 +1,12 @@
 package fireresponsesystem.domain;
 
 import fireresponsesystem.domain.*;
-
+import java.util.Date;
 import java.util.List;
-
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 
 //<<< PoEAA / Repository
@@ -14,4 +16,15 @@ import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 )
 public interface UserAlarmRepository extends JpaRepository<UserAlarm, Long> {
 
-    List<UserAlarm> findByUserId(Long userId);}
+    List<UserAlarm> findByUserIdOrderByCreatedAtDesc(String userId);
+
+    @Query("SELECT ua FROM UserAlarm ua WHERE ua.userId = :userId AND ua.isRead = false AND " +
+           "(ua.alarmType = 'USER_SPECIFIC' OR (ua.alarmType = 'LOCATION_BASED' AND ua.createdAt >= :startDate)) " +
+           "ORDER BY ua.createdAt DESC")
+    List<UserAlarm> findUnreadAlarmsWithTimeWindowForLocationBased(
+        @Param("userId") String userId,
+        @Param("startDate") Date startDate
+    );
+
+    Optional<UserAlarm> findByUserAlarmId(Long userAlarmId);
+}

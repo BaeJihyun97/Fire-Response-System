@@ -18,11 +18,14 @@ public class UserAlarm {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long userAlarmId;
 
-    private Long userId;
+    private String userId;
 
     private Long alarmId;
 
     private Long eventId;
+
+    @Enumerated(EnumType.STRING)
+    private AlarmType alarmType;
 
     private Float longitude;
 
@@ -33,6 +36,10 @@ public class UserAlarm {
     private Long reportId;
 
     private String content;
+
+    private Boolean isSent;
+
+    private Boolean isRead;
 
     @Autowired
     private static UserRepository userRepository;
@@ -49,13 +56,14 @@ public class UserAlarm {
         VideoAnalysisFailed videoAnalysisFailed
     ) {
         // 모든 사용자에 대해 알람 생성
-        List<Long> userIds = getAllUserIds(); // 모든 사용자 ID를 가져오는 메서드
+        List<String> userIds = getAllUserIds(); // 모든 사용자 ID를 가져오는 메서드
 
-        for (Long userId : userIds) {
+        for (String userId : userIds) {
             UserAlarm userAlarm = new UserAlarm();
             userAlarm.setUserId(userId);
             userAlarm.setReportId(videoAnalysisFailed.getReportId());
             userAlarm.setContent("업로드한 영상 분석을 실패하였습니다.");
+            userAlarm.setAlarmType(AlarmType.USER_SPECIFIC);
 
             // DB에 저장
             repository().save(userAlarm);
@@ -66,9 +74,9 @@ public class UserAlarm {
     //<<< Clean Arch / Port Method
     public static void notifyByLocation(FireEventNotified fireEventNotified) {
         // 모든 사용자에 대해 알람 생성
-        List<Long> userIds = getAllUserIds(); // 모든 사용자 ID를 가져오는 메서드
+        List<String> userIds = getAllUserIds(); // 모든 사용자 ID를 가져오는 메서드
 
-        for (Long userId : userIds) {
+        for (String userId : userIds) {
             UserAlarm userAlarm = new UserAlarm();
             userAlarm.setUserId(userId);
             userAlarm.setAlarmId(fireEventNotified.getAlarmId());
@@ -77,6 +85,7 @@ public class UserAlarm {
             userAlarm.setLatitude(fireEventNotified.getLatitude());
             userAlarm.setCreatedAt(fireEventNotified.getCreatedAt());
             userAlarm.setContent(fireEventNotified.getContent());
+            userAlarm.setAlarmType(AlarmType.LOCATION_BASED);
 
             // DB에 저장
             repository().save(userAlarm);
@@ -85,10 +94,10 @@ public class UserAlarm {
     //>>> Clean Arch / Port Method
 
     // 모든 사용자 ID를 가져오는 메서드
-    private static List<Long> getAllUserIds() {
+    private static List<String> getAllUserIds() {
         // UserRepository를 사용하여 모든 사용자 ID를 가져옵니다.
         return userRepository.findAllUserIds();
     }
-    
+
 }
 //>>> DDD / Aggregate Root
