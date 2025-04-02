@@ -210,9 +210,11 @@ export const videoApi = {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('report_id', reportId);
+    const token = localStorage.getItem('token');
     return axios.post('http://20.249.170.119:80/videos/upload', formData, {
       headers: {
-        'Content-Type': 'multipart/form-data'
+        'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${token}`
       }
     });
   }
@@ -225,7 +227,15 @@ export const reportApi = {
   createReport: (reportData) => api.post('/reports', reportData),
   updateReport: (id, reportData) => api.put(`/reports/${id}`, reportData),
   deleteReport: (id) => api.delete(`/reports/${id}`),
-  submitReport: (reportData) => api.post('http://20.249.67.38:82/reports//receivereport', reportData)
+  submitReport: (reportData) => {
+    const token = localStorage.getItem('token');
+    return axios.post('http://20.214.119.42:82/reports//receivereport', reportData, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+  }
 };
 
 export default api; 
