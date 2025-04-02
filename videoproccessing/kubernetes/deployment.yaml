@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: videoprocessing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: videoprocessing
+  template:
+    metadata:
+      labels:
+        app: videoprocessing
+    spec:
+      containers:
+      - name: videoprocessing
+        image: team05registry.azurecr.io/videoprocessing:v1
+        ports:
+        - containerPort: 8000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: videoprocessing
+spec:
+  type: LoadBalancer
+  selector:
+    app: videoprocessing
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8000
