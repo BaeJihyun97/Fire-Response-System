@@ -457,6 +457,7 @@ import VideoPlayer from '../components/VideoPlayer.vue';
 import CommentSection from '../components/CommentSection.vue';
 import MapView from './MapView.vue';
 import { reverseGeocode } from '../services/geocodingService';
+import { postApi } from '../services/api';
 
 const router = useRouter();
 const route = useRoute();
@@ -500,87 +501,26 @@ const refreshData = async () => {
   error.value = null;
   
   try {
-    // 여기에 API 호출 로직 추가
-    await new Promise(resolve => setTimeout(resolve, 1000)); // 시뮬레이션
+    const postId = route.params.id;
+    const response = await postApi.getPost(postId);
+    const post = response.data;
     
-    // ID에 따라 다른 데이터 반환
-    const reportId = route.params.id;
-    let reportData;
-    
-    switch (reportId) {
-      case '1':
-        reportData = {
-          id: '1',
-          coordinates: { lat: 37.498095, lng: 127.027610 },
-          timestamp: '2024-03-31T14:30:00',
-          status: '진행 중',
-          isFire: true,
-          riskLevel: '높음',
-          verified: true,
-          metadata: {
-            likes: 45,
-            comments: 12,
-            videoUrl: 'https://team05sa.blob.core.windows.net/videos/38/38.mp4',
-            imageUrl: 'https://example.com/image1.jpg'
-          }
-        };
-        break;
-      case '2':
-        reportData = {
-          id: '2',
-          coordinates: { lat: 37.526120, lng: 126.925771 },
-          timestamp: '2024-03-31T15:00:00',
-          status: '진행 중',
-          isFire: true,
-          riskLevel: '중간',
-          verified: true,
-          metadata: {
-            likes: 32,
-            comments: 8,
-            videoUrl: 'https://team05sa.blob.core.windows.net/videos/6/6.mp4',
-            imageUrl: 'https://example.com/image2.jpg'
-          }
-        };
-        break;
-      case '3':
-        reportData = {
-          id: '3',
-          coordinates: { lat: 37.566535, lng: 126.977969 },
-          timestamp: new Date(Date.now() - 600000).toISOString(), // 10분 전
-          status: '검토 중',
-          isFire: false,
-          riskLevel: '낮음',
-          verified: false,
-          metadata: {
-            likes: 45,
-            comments: 12,
-            videoUrl: 'https://team05sa.blob.core.windows.net/videos/6/6.mp4',
-            imageUrl: 'https://placehold.co/600x400'
-          }
-        };
-        break;
-      case '4':
-        reportData = {
-          id: '4',
-          coordinates: { lat: 37.538617, lng: 127.094454 },
-          timestamp: new Date(Date.now() - 3600000).toISOString(), // 1시간 전
-          status: '검토 중',
-          isFire: false,
-          riskLevel: '낮음',
-          verified: false,
-          metadata: {
-            likes: 67,
-            comments: 23,
-            videoUrl: 'https://team05sa.blob.core.windows.net/videos/6/6.mp4',
-            imageUrl: 'https://placehold.co/400x200'
-          }
-        };
-        break;
-      default:
-        throw new Error('제보를 찾을 수 없습니다.');
-    }
-    
-    report.value = reportData;
+    // API 응답 데이터를 현재 구조에 맞게 변환
+    report.value = {
+      id: post.postId,
+      coordinates: { lat: post.latitude, lng: post.longitude },
+      timestamp: new Date().toISOString(),
+      status: '진행 중',
+      isFire: true,
+      riskLevel: '중간',
+      verified: false,
+      metadata: {
+        likes: post.reactionCount || 0,
+        comments: 0,
+        videoUrl: post.blurredVideoUri || '',
+        imageUrl: ''
+      }
+    };
     
     // 위치 정보 가져오기
     await loadLocationInfo();

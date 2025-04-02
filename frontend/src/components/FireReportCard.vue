@@ -248,7 +248,7 @@ const viewDetail = (event) => {
   }
   
   if (props.fire.id) {
-    router.push(`/report/${props.fire.id}`);
+    router.push(`/posts/${props.fire.id}`);
   }
 };
 
@@ -277,7 +277,7 @@ const shareReport = () => {
     navigator.share({
       title: `화재 제보: ${displayLocation.value}`,
       text: props.fire.isFire ? '화재가 발생했습니다.' : '화재 의심 상황입니다.',
-      url: window.location.href + `/report/${props.fire.id}`
+      url: window.location.href + `/posts/${props.fire.id}`
     }).catch(err => {
       console.error('공유 실패:', err);
     });
@@ -330,7 +330,7 @@ const formatTime = (timestamp) => {
 
 // 상세 페이지로 이동
 const goToDetail = () => {
-  router.push(`/report/${props.fire.id}`);
+  router.push(`/posts/${props.fire.id}`);
 };
 
 const handleVideoError = (error) => {

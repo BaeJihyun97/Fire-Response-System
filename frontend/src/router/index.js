@@ -33,8 +33,8 @@ const routes = [
     component: ReportPage
   },
   {
-    path: '/report/:id',
-    name: 'ReportDetail',
+    path: '/posts/:id',
+    name: 'PostDetail',
     component: ReportDetailPage,
     props: true
   },

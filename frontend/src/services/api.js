@@ -210,60 +210,11 @@ export const authApi = {
 
 // 게시물 API
 export const postApi = {
-  getPosts: (params) => axios.get('/posts', { params }),
-  getPostById: (id) => axios.get(`/posts/${id}`),
-  createPost: (postData) => axios.post('/posts', postData),
-  updatePost: (id, postData) => axios.put(`/posts/${id}`, postData),
-  updatePostStatus: (id, status) => axios.patch(`/posts/${id}/status`, { status }),
-  deletePost: (id) => axios.delete(`/posts/${id}`),
-  getPostsByEventId: (eventId) => axios.get(`/events/${eventId}/posts`)
-};
-
-// 관리자 API
-export const adminApi = {
-  getStatistics: () => axios.get('/admin/statistics'),
-  getUsers: (params) => axios.get('/admin/users', { params }),
-  updateUserRole: (userId, role) => axios.patch(`/admin/users/${userId}/role`, { role }),
-  getSystemLogs: (params) => axios.get('/admin/logs', { params })
-};
-
-// 미디어 API
-export const mediaApi = {
-  uploadVideo: (file) => {
-    const formData = new FormData();
-    formData.append('video', file);
-    return axios.post('/media/video', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-  },
-  uploadImage: (file) => {
-    const formData = new FormData();
-    formData.append('image', file);
-    return axios.post('/media/image', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-  },
-  deleteMedia: (id) => axios.delete(`/media/${id}`)
-};
-
-// 위치 API
-export const locationApi = {
-  searchLocation: (query) => axios.get('/locations/search', { params: { query } }),
-  getCoordinates: (address) => axios.get('/locations/coordinates', { params: { address } }),
-  getAddress: (coordinates) => axios.get('/locations/address', { params: coordinates })
-};
-
-// 지도 API
-export const mapApi = {
-  getRiskAreas: () => axios.get('/map/risk-areas'),
-  getFireStations: () => axios.get('/map/fire-stations'),
-  getActiveEvents: () => axios.get('/map/active-events'),
-  getHeatmapData: () => axios.get('/map/heatmap'),
-  getRiskAnalysis: (area) => axios.get('/map/risk-analysis', { params: { area } })
+  getPosts: () => axios.get('/posts'),
+  getPost: (id) => axios.get(`/posts/${id}`),
+  createPost: (data) => axios.post('/posts', data),
+  updatePost: (id, data) => axios.put(`/posts/${id}`, data),
+  deletePost: (id) => axios.delete(`/posts/${id}`)
 };
 
 export default {
@@ -271,9 +222,5 @@ export default {
   reportApi: reportApiService,
   videoApi: videoApiService,
   authApi,
-  postApi,
-  adminApi,
-  mediaApi,
-  locationApi,
-  mapApi
-}; 
+  postApi
+};
