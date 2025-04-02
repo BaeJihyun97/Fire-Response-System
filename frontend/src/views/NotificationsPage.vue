@@ -166,7 +166,7 @@ export default {
 </script>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { 
   Bell, 
   BellOff, 
@@ -184,24 +184,72 @@ import {
 } from 'lucide-vue-next';
 import { useRouter } from 'vue-router';
 import { useNotificationStore } from '../stores/notificationStore';
+import { getAllNotifications } from '../services/notificationService';
 
 const router = useRouter();
 const notificationStore = useNotificationStore();
 const activeFilter = ref('all');
+const notifications = ref([]);
+const isLoading = ref(true);
+
+// 토큰에서 userId 추출 함수
+const getUserIdFromToken = () => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      
+      const payload = JSON.parse(jsonPayload);
+      return payload.sub || payload.userId;
+    } catch (error) {
+      console.error('토큰 디코딩 실패:', error);
+      return null;
+    }
+  }
+  return null;
+};
+
+// 알림 목록 가져오기
+const fetchNotifications = async () => {
+  try {
+    isLoading.value = true;
+    const userId = getUserIdFromToken();
+    if (!userId) {
+      console.error('사용자 ID를 찾을 수 없습니다.');
+      return;
+    }
+    
+    notifications.value = await getAllNotifications(userId);
+  } catch (error) {
+    console.error('알림 목록을 가져오는데 실패했습니다:', error);
+  } finally {
+    isLoading.value = false;
+  }
+};
 
 // 필터링된 알림
 const filteredNotifications = computed(() => {
-  return notificationStore.getByType(activeFilter.value);
+  if (activeFilter.value === 'all') {
+    return notifications.value;
+  }
+  return notifications.value.filter(notification => 
+    notification.type === activeFilter.value
+  );
 });
 
 // 알림 액션 처리
 const handleNotificationAction = (notification) => {
-  // 알림을 읽음 상태로 변경
-  notificationStore.markAsRead(notification.id);
-  
-  // 해당 페이지로 이동
   router.push(notification.actionLink);
 };
+
+// 컴포넌트 마운트 시 알림 목록 가져오기
+onMounted(() => {
+  fetchNotifications();
+});
 
 // 알림 타입에 따른 아이콘 반환
 const getNotificationIcon = (type) => {
