@@ -402,6 +402,102 @@
           </div>
         </div>
 
+        <!-- AI 분석 결과 -->
+        <div class="mt-6">
+          <h3 class="text-lg font-semibold mb-3">AI 분석 결과</h3>
+          <div class="bg-white rounded-lg shadow p-4 space-y-4">
+            <!-- 화재 감지 결과 -->
+            <div class="flex items-start">
+              <div class="flex-1">
+                <div class="flex items-center mb-2">
+                  <AlertTriangle class="h-5 w-5 mr-2" :class="aiAnalysis.fire_detected ? 'text-red-500' : 'text-green-500'" />
+                  <h4 class="font-medium">화재 감지 결과</h4>
+                </div>
+                <p class="text-sm text-gray-700">
+                  {{ aiAnalysis.fire_detected ? '화재가 감지되었습니다.' : '화재가 감지되지 않았습니다.' }}
+                </p>
+              </div>
+            </div>
+
+            <!-- 연기 감지 결과 -->
+            <div class="flex items-start">
+              <div class="flex-1">
+                <div class="flex items-center mb-2">
+                  <Cloud class="h-5 w-5 mr-2" :class="aiAnalysis.smoke.present ? 'text-orange-500' : 'text-green-500'" />
+                  <h4 class="font-medium">연기 감지 결과</h4>
+                </div>
+                <p class="text-sm text-gray-700">
+                  {{ aiAnalysis.smoke.present ? 
+                    `연기가 감지되었습니다. (색상: ${aiAnalysis.smoke.color}, 농도: ${aiAnalysis.smoke.density})` : 
+                    '연기가 감지되지 않았습니다.' }}
+                </p>
+              </div>
+            </div>
+
+            <!-- 인물/동물 감지 결과 -->
+            <div class="flex items-start">
+              <div class="flex-1">
+                <div class="flex items-center mb-2">
+                  <Users class="h-5 w-5 mr-2" :class="aiAnalysis.people_or_animals.present ? 'text-blue-500' : 'text-gray-500'" />
+                  <h4 class="font-medium">인물/동물 감지 결과</h4>
+                </div>
+                <p class="text-sm text-gray-700">
+                  {{ aiAnalysis.people_or_animals.present ? aiAnalysis.people_or_animals.details : '인물이나 동물이 감지되지 않았습니다.' }}
+                </p>
+              </div>
+            </div>
+
+            <!-- 화재 확산 상태 -->
+            <div class="flex items-start">
+              <div class="flex-1">
+                <div class="flex items-center mb-2">
+                  <Flame class="h-5 w-5 mr-2" :class="aiAnalysis.fire_spread.spreading ? 'text-red-500' : 'text-green-500'" />
+                  <h4 class="font-medium">화재 확산 상태</h4>
+                </div>
+                <p class="text-sm text-gray-700">
+                  {{ aiAnalysis.fire_spread.spreading ? 
+                    '화재가 확산되고 있습니다.' : 
+                    '화재가 확산되고 있지 않습니다.' }}
+                </p>
+              </div>
+            </div>
+
+            <!-- 소방대원 감지 결과 -->
+            <div class="flex items-start">
+              <div class="flex-1">
+                <div class="flex items-center mb-2">
+                  <Shield class="h-5 w-5 mr-2" :class="aiAnalysis.firefighting_response.responders_present ? 'text-blue-500' : 'text-gray-500'" />
+                  <h4 class="font-medium">소방대원 감지 결과</h4>
+                </div>
+                <p class="text-sm text-gray-700">
+                  {{ aiAnalysis.firefighting_response.responders_present ? 
+                    '소방대원이 현장에 있습니다.' : 
+                    '소방대원이 아직 도착하지 않았습니다.' }}
+                </p>
+              </div>
+            </div>
+
+            <!-- 감지된 객체 목록 -->
+            <div class="flex items-start">
+              <div class="flex-1">
+                <div class="flex items-center mb-2">
+                  <List class="h-5 w-5 mr-2 text-gray-500" />
+                  <h4 class="font-medium">감지된 객체</h4>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <span 
+                    v-for="(object, index) in aiAnalysis.objects" 
+                    :key="index"
+                    class="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs"
+                  >
+                    {{ object }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 액션 버튼 -->
         <div class="grid grid-cols-3 gap-2">
           <button 
@@ -451,7 +547,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { AlertTriangle, MapPin, Clock, Activity, MessageSquare, Share2, Shield, RefreshCw, ChevronDown } from 'lucide-vue-next';
+import { AlertTriangle, MapPin, Clock, Activity, MessageSquare, Share2, Shield, RefreshCw, ChevronDown, Cloud, Users, Flame, List } from 'lucide-vue-next';
 import AppHeader from '../components/AppHeader.vue';
 import VideoPlayer from '../components/VideoPlayer.vue';
 import CommentSection from '../components/CommentSection.vue';
@@ -589,6 +685,31 @@ const shareReport = async () => {
     console.error('공유하기 오류:', err);
   }
 };
+
+// AI 분석 결과 데이터
+const aiAnalysis = ref({
+  fire_detected: false,
+  fire_size: 'N/A',
+  flame_color: [],
+  smoke: {
+    present: false,
+    color: 'N/A',
+    density: 'N/A'
+  },
+  objects: ['사람', '의자', '조명', '책상', '천장', '천장 조명'],
+  people_or_animals: {
+    present: true,
+    details: '2명 이상의 사람이 있음. 화재와 관련 없음.'
+  },
+  fire_spread: {
+    spreading: false,
+    indicators: []
+  },
+  firefighting_response: {
+    responders_present: false
+  },
+  severity: 'N/A'
+});
 
 // 초기 데이터 로드
 onMounted(() => {
