@@ -1,5 +1,5 @@
 import os
-from typing import List
+import json
 from fastapi import (
     FastAPI,
     HTTPException,
@@ -256,7 +256,7 @@ async def process_video_analysis(event: VideoAnalysisRequestedEvent):
                     tags=result["tags"],
                     severity=result["severity"],
                     fire_detected=result["fire_detected"],
-                    analyzed_data=result["openai_analysis"],
+                    analyzed_data=json.dumps(result["openai_analysis"]),
                 )
                 kafka_producer.publish("VideoAnalyzed", completed_event)
         else:

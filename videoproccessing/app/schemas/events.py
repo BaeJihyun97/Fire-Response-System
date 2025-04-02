@@ -49,7 +49,7 @@ class VideoAnalysisCompletedEvent(BaseModel):
     fire_detected: bool
     tags: list[str] = []
     severity: Optional[str] = "N/A"
-    analyzed_data: dict = {}
+    analyzed_data: str = "{}"
     timestamp: datetime = datetime.utcnow()
 
     model_config = {
