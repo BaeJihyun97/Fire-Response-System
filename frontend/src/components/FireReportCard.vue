@@ -207,6 +207,12 @@ const riskLevelClass = computed(() => {
 
 // 표시할 위치 정보 계산 - location 속성 사용
 const displayLocation = computed(() => {
+  // formattedAddress가 있으면 그것을 사용
+  if (formattedAddress.value?.fullAddress) {
+    return formattedAddress.value.fullAddress;
+  }
+  
+  // location이 있으면 그것을 사용
   if (props.fire.location) {
     return props.fire.location;
   }
@@ -219,15 +225,9 @@ const displayLocation = computed(() => {
   return '위치 정보 없음';
 });
 
-// 컴포넌트 마운트 시 좌표로부터 주소 변환 (location이 없는 경우에만)
+// 컴포넌트 마운트 시 좌표로부터 주소 변환
 onMounted(async () => {
   console.log('FireReportCard 마운트됨, 좌표:', props.fire.coordinates);
-  
-  // 이미 location이 있으면 역지오코딩 하지 않음
-  if (props.fire.location) {
-    isLoadingAddress.value = false;
-    return;
-  }
   
   if (!props.fire.coordinates) {
     console.error('좌표 정보가 없습니다');

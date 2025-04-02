@@ -165,11 +165,13 @@ const refreshData = async () => {
   try {
     const response = await postApi.getPosts();
     const events = response.data;
-    console.log('API 응답 데이터:', events);
+    console.log('API 응답 데이터 구조:', events);
     
     // API 응답 데이터를 현재 구조에 맞게 변환
     const transformedEvents = await Promise.all(events.map(async event => {
-      // 역지오코딩을 통해 주소 가져오기
+      console.log('이벤트 데이터:', event);
+      
+      // 위도/경도를 이용해 주소 가져오기
       let location = '';
       try {
         const address = await reverseGeocode(event.latitude, event.longitude);
@@ -182,7 +184,7 @@ const refreshData = async () => {
       // 이벤트 ID로 최신 리포트 가져오기
       let videoUrl = '';
       try {
-        const reportResponse = await reportApiService.getLatestReportByEventId(event.postId);
+        const reportResponse = await reportApiService.getLatestReportByEventId(event.eventId);
         if (reportResponse.data && reportResponse.data.videoId) {
           videoUrl = `https://team05sa.blob.core.windows.net/videos/${reportResponse.data.videoId}/${reportResponse.data.videoId}.mp4`;
         }
@@ -193,7 +195,7 @@ const refreshData = async () => {
       return {
         id: event.postId,
         coordinates: { lat: event.latitude, lng: event.longitude },
-        location: location,
+        location: '',
         timestamp: new Date().toISOString(),
         status: '진행 중',
         isFire: true,

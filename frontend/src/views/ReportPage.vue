@@ -249,21 +249,31 @@ const getUserIdFromToken = () => {
   }
 };
 
-// 위치 정보 가져오기
+// 주소 포맷팅 함수 수정
+const formatAddress = (address) => {
+  if (!address) return '';
+  
+  const parts = [];
+  if (address.province) parts.push(address.province);
+  if (address.city) parts.push(address.city);
+  if (address.borough) parts.push(address.borough);
+  if (address.quarter) parts.push(address.quarter);
+  if (address.road) parts.push(address.road);
+  if (address.house_number) parts.push(address.house_number);
+  
+  return parts.join(' ');
+};
+
+// 위치 정보 가져오기 함수 수정
 const loadLocationInfo = async (coordinates) => {
   try {
-    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${coordinates.lat}&lon=${coordinates.lng}`);
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coordinates.lat}&lon=${coordinates.lng}&zoom=18&addressdetails=1`
+    );
     const data = await response.json();
     
-    if (data.address) {
-      // 주소 정보 조합
-      const address = [
-        data.address.road,
-        data.address.building,
-        data.address.suburb
-      ].filter(Boolean).join(', ');
-      
-      return address || '위치 정보 없음';
+    if (data && data.address) {
+      return formatAddress(data.address);
     }
     return '위치 정보 없음';
   } catch (error) {
@@ -272,7 +282,7 @@ const loadLocationInfo = async (coordinates) => {
   }
 };
 
-// 현재 위치 가져오기
+// 현재 위치 가져오기 함수 수정
 const getCurrentLocation = () => {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
@@ -300,13 +310,16 @@ const getCurrentLocation = () => {
   });
 };
 
-// 현재 위치 버튼 클릭 처리
+// 위치 클릭 핸들러 수정
 const handleLocationClick = async () => {
   try {
     await getCurrentLocation();
   } catch (error) {
     console.error('위치 정보 가져오기 실패:', error);
-    alert('위치 정보를 가져올 수 없습니다. 위치 권한을 확인해주세요.');
+    notificationStore.addNotification({
+      type: 'error',
+      message: '위치 정보를 가져오는데 실패했습니다.'
+    });
   }
 };
 
