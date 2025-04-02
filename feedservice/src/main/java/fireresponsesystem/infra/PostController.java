@@ -83,7 +83,18 @@ public class PostController {
             postMap.put("latitude", post.getLatitude());
             postMap.put("blurredVideoUri", post.getBlurredVideoUri());
             postMap.put("reactionCount", post.getReactionCount());
+            postMap.put("createdAt", post.getCreatedAt());
             postMap.put("hasUserReacted", userId != null ? post.hasUserReacted(userId) : false);
+            postMap.put("comments", post.getComments().stream()
+                .map(comment -> {
+                    Map<String, Object> commentMap = new HashMap<>();
+                    commentMap.put("commentId", comment.getCommentId());
+                    commentMap.put("userId", comment.getUserId());
+                    commentMap.put("comment", comment.getComment());
+                    commentMap.put("createdAt", comment.getCreatedAt());
+                    return commentMap;
+                })
+                .collect(Collectors.toList()));
             return postMap;
         }).collect(Collectors.toList());
     }

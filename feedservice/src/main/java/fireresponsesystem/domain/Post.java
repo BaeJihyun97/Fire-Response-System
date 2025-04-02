@@ -26,6 +26,10 @@ public class Post {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long postId;
 
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(nullable = false, updatable = false)
+    private Date createdAt = new Date();
+
     @Column(nullable = true)
     private String blurredVideoUri;
 
