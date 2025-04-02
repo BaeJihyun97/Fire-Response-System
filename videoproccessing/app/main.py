@@ -12,6 +12,7 @@ from fastapi import (
 from beanie import init_beanie
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
+from typing import Optional
 import asyncio
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -39,6 +40,11 @@ class VideoAnalysisRequest(BaseModel):
     report_id: int
     event_id: int
     user_id: str
+
+
+class VideoWithAnalysis(BaseModel):
+    video: Video
+    latest_analysis: Optional[VideoAnalysisReport] = None
 
 
 # Initialize services
@@ -173,13 +179,22 @@ async def upload_video(
         await file.close()
 
 
-# @app.get("/videos/{video_id}", response_model=Video)
-# async def get_video(video_id: str):
-#     """Get video information."""
-#     video = await Video.find_one({"video_id": video_id})
-#     if not video:
-#         raise HTTPException(status_code=404, detail="Video not found")
-#     return video
+@app.get("/videos/{video_id}", response_model=VideoWithAnalysis)
+async def get_video(video_id: str):
+    """Get video information and latest analysis results."""
+    video = await Video.find_one({"video_id": video_id})
+    if not video:
+        raise HTTPException(status_code=404, detail="Video not found")
+
+    # Get the latest analysis report for this video
+    latest_analysis = await VideoAnalysisReport.find_one(
+        {"video_id": video_id},
+        sort=[
+            ("created_at", -1)
+        ],  # Sort by created_at in descending order to get the latest
+    )
+
+    return VideoWithAnalysis(video=video, latest_analysis=latest_analysis)
 
 
 # @app.delete("/videos/{video_id}")

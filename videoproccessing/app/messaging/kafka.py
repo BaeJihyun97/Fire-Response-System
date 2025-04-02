@@ -115,7 +115,7 @@ class KafkaConsumer:
             try:
                 # Poll for messages
                 msg = self.consumer.poll(1.0)
-                time_threshold = datetime.now() - timedelta(minutes=30)
+                time_threshold = datetime.now() - timedelta(minutes=15)
 
                 if msg is None:
                     await asyncio.sleep(0.1)
