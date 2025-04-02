@@ -119,7 +119,7 @@ import { AlertTriangle, Bell, Camera, Home, Map, Phone, RefreshCw, User } from '
 import FireReportCard from '../components/FireReportCard.vue';
 import AppHeader from '../components/AppHeader.vue';
 import { useRouter } from 'vue-router';
-import { eventApiService } from '../services/api';
+import { postApi } from '../services/api';
 
 const activeTab = ref('confirmed');
 const isRefreshing = ref(false);
@@ -135,39 +135,31 @@ const refreshData = async () => {
   isRefreshing.value = true;
   
   try {
-    const events = await eventApiService.getEvents();
+    const response = await postApi.getPosts();
+    const events = response.data;
+    console.log('API 응답 데이터:', events);
+    
     // API 응답 데이터를 현재 구조에 맞게 변환
-    fireReports.value = events.filter(event => event.isFire).map(event => ({
-      id: event.id,
+    fireReports.value = events.map(event => ({
+      id: event.postId,
       coordinates: { lat: event.latitude, lng: event.longitude },
-      timestamp: event.createdAt,
-      status: event.status,
-      isFire: event.isFire,
-      riskLevel: event.riskLevel,
-      verified: event.verified,
+      timestamp: new Date().toISOString(), // 현재 시간으로 설정 (API에서 시간 정보가 없음)
+      status: '진행 중',
+      isFire: true, // 모든 이벤트를 화재로 표시
+      riskLevel: '중간', // 기본 위험도 설정
+      verified: false,
       metadata: {
-        likes: event.likes || 0,
-        comments: event.comments || 0,
-        videoUrl: event.videoUrl || '',
-        imageUrl: event.imageUrl || ''
+        likes: event.reactionCount || 0,
+        comments: 0, // API에서 댓글 수 정보가 없음
+        videoUrl: event.blurredVideoUri || '',
+        imageUrl: '' // API에서 이미지 URL 정보가 없음
       }
     }));
+    console.log('화재 제보 데이터:', fireReports.value);
 
-    communityReports.value = events.filter(event => !event.isFire).map(event => ({
-      id: event.id,
-      coordinates: { lat: event.latitude, lng: event.longitude },
-      timestamp: event.createdAt,
-      status: event.status,
-      isFire: event.isFire,
-      riskLevel: event.riskLevel,
-      verified: event.verified,
-      metadata: {
-        likes: event.likes || 0,
-        comments: event.comments || 0,
-        videoUrl: event.videoUrl || '',
-        imageUrl: event.imageUrl || ''
-      }
-    }));
+    // 커뮤니티 제보는 현재 API 응답에 해당하는 데이터가 없으므로 빈 배열로 설정
+    communityReports.value = [];
+    console.log('커뮤니티 제보 데이터:', communityReports.value);
   } catch (error) {
     console.error('데이터 새로고침 오류:', error);
   } finally {

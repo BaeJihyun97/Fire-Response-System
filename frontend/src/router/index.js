@@ -90,7 +90,7 @@ const routes = [
     component: () => import('../views/ProfilePage.vue')
   },
   {
-    path: '/user/:userId/reports',
+    path: '/reports/userId/:userId',
     name: 'UserReports',
     component: UserReportsView,
     props: true

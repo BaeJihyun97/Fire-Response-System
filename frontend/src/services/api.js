@@ -148,7 +148,7 @@ export const reportApiService = {
   getReportsByUserId: async (userId, config = {}) => {
     console.log('Fetching reports for userId:', userId);
     try {
-      const response = await reportsApi.get(`/reports/user/${userId}`, config);
+      const response = await reportsApi.get(`/reports/userId/${userId}`, config);
       console.log('Reports API response:', response.data);
       return response;
     } catch (error) {

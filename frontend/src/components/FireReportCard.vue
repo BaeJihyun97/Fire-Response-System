@@ -74,7 +74,7 @@
       
       <!-- 비디오가 없으면 이미지 표시 -->
       <img 
-        v-else 
+        v-else-if="fire.metadata.imageUrl" 
         :src="fire.metadata.imageUrl" 
         alt="화재 이미지" 
         class="w-full h-96 object-cover"
@@ -396,5 +396,16 @@ const toggleVideo = () => {
     isPlaying.value = !isPlaying.value;
   }
 };
+
+// props가 변경될 때마다 로그 출력
+watch(() => props.fire, (newValue) => {
+  console.log('FireReportCard props 변경:', newValue);
+}, { deep: true });
+
+// 컴포넌트 마운트 시 props 로그 출력
+onMounted(() => {
+  console.log('FireReportCard 마운트됨, props:', props.fire);
+  // ... existing code ...
+});
 </script>
 

@@ -184,8 +184,8 @@
           }).join(''));
           
           const payload = JSON.parse(jsonPayload);
-          const userId = payload.sub; // JWT 토큰의 sub 필드에서 userid 가져오기
-          router.push(`/user/${userId}/reports`);
+          const userId = payload.sub; 
+          router.push(`/reports/userId/${userId}`);
           isMenuOpen.value = false;
         } catch (error) {
           console.error('토큰 디코딩 실패:', error);
