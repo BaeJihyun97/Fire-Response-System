@@ -127,8 +127,12 @@
     </div>
     
     <!-- 댓글 섹션 (토글) -->
-    <div v-if="showComments" class="px-4 pb-4 pt-2 bg-gray-50 border-t border-gray-100">
-      <comment-section :post-id="fire.id" />
+    <div 
+      v-if="showComments" 
+      class="px-4 pb-4 pt-2 bg-gray-50 border-t border-gray-100"
+      @click.stop
+    >
+      <comment-section :post-id="parseInt(fire.id)" />
     </div>
     
     <!-- 지도 모달 -->
@@ -150,6 +154,7 @@ import CommentSection from './CommentSection.vue';
 import MapView from '../views/MapView.vue';
 import VideoPlayer from './VideoPlayer.vue';
 import { reverseGeocode } from '../services/geocodingService';
+import { postApi } from '../services/api';
 
 const props = defineProps({
   fire: {
@@ -266,13 +271,38 @@ const openComments = () => {
 };
 
 // 위험해요 버튼 클릭
-const confirmFire = () => {
-  isConfirmed.value = !isConfirmed.value;
-  // 실제로는 API 호출을 통해 서버에 업데이트
-  if (isConfirmed.value) {
-    props.fire.metadata.likes++;
-  } else {
-    props.fire.metadata.likes--;
+const confirmFire = async () => {
+  try {
+    // 토큰 가져오기
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+
+    // 토큰 디코딩
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+
+    const decodedToken = JSON.parse(jsonPayload);
+    const userId = decodedToken.preferred_username;
+
+    // API 요청 보내기
+    await postApi.reactToPost(props.fire.id, userId);
+    
+    // UI 업데이트
+    isConfirmed.value = !isConfirmed.value;
+    if (isConfirmed.value) {
+      props.fire.metadata.likes++;
+    } else {
+      props.fire.metadata.likes--;
+    }
+  } catch (error) {
+    console.error('위험해요 처리 실패:', error);
+    alert('위험해요 처리를 실패했습니다.');
   }
 };
 

@@ -17,7 +17,6 @@
               <span class="text-xs text-gray-500 ml-2">{{ comment.time }}</span>
             </div>
             <p class="text-gray-700 text-sm mt-1">{{ comment.text }}</p>
-            <!-- 답글 및 신고 버튼 제거 -->
           </div>
         </div>
       </div>
@@ -50,25 +49,20 @@
       </div>
     </div>
   </div>
-  </template>
-  
-  <script>
-  export default {
-    name: 'CommentSection',
-    props: {
-      postId: {
-        type: String,
-        required: true
-      }
-    }
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const props = defineProps({
+  postId: {
+    type: Number,
+    required: true
   }
-  </script>
-  
-  <script setup>
-  import { ref } from 'vue';
-  
-  // 댓글 데이터
-  const comments = ref([
+});
+
+// 댓글 데이터
+const comments = ref([
   {
     id: 1,
     username: "시민제보자",
@@ -83,13 +77,13 @@
     text: "소방차가 빠르게 도착했네요. 다행입니다.",
     time: "5분 전"
   }
-  ]);
-  
-  // 새 댓글 입력
-  const newComment = ref('');
-  
-  // 댓글 추가
-  const addComment = () => {
+]);
+
+// 새 댓글 입력
+const newComment = ref('');
+
+// 댓글 추가
+const addComment = () => {
   if (!newComment.value.trim()) return;
   
   comments.value.push({
@@ -101,5 +95,5 @@
   });
   
   newComment.value = '';
-  };
-  </script>
+};
+</script>

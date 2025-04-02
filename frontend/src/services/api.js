@@ -214,7 +214,19 @@ export const postApi = {
   getPost: (id) => axios.get(`/posts/${id}`),
   createPost: (data) => axios.post('/posts', data),
   updatePost: (id, data) => axios.put(`/posts/${id}`, data),
-  deletePost: (id) => axios.delete(`/posts/${id}`)
+  deletePost: (id) => axios.delete(`/posts/${id}`),
+  reactToPost: async (postId, userId) => {
+    try {
+      const response = await axios.post(`http://20.214.121.111:8080/posts/${postId}/react`, {
+        postId: postId,
+        userId: userId
+      });
+      return response.data;
+    } catch (error) {
+      console.error('위험해요 API 요청 실패:', error);
+      throw error;
+    }
+  }
 };
 
 // 이벤트 API
