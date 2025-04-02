@@ -59,6 +59,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
         ws: true,
+      },
+      '/blob': {
+        target: 'https://team05sa.blob.core.windows.net',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
       }
     }
   }

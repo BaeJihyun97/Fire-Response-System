@@ -122,7 +122,7 @@ import { AlertTriangle, Bell, Camera, Home, Map, Phone, RefreshCw, User } from '
 import FireReportCard from '../components/FireReportCard.vue';
 import AppHeader from '../components/AppHeader.vue';
 import { useRouter } from 'vue-router';
-import { postApi } from '../services/api';
+import { postApi, reportApiService } from '../services/api';
 import { reverseGeocode } from '../services/geocodingService';
 import { getUnreadNotifications } from '../services/notificationService';
 import { getCurrentLocation } from '../services/locationService';
@@ -179,6 +179,17 @@ const refreshData = async () => {
         location = `위도: ${event.latitude.toFixed(5)}, 경도: ${event.longitude.toFixed(5)}`;
       }
 
+      // 이벤트 ID로 최신 리포트 가져오기
+      let videoUrl = '';
+      try {
+        const reportResponse = await reportApiService.getLatestReportByEventId(event.postId);
+        if (reportResponse.data && reportResponse.data.videoId) {
+          videoUrl = `https://team05sa.blob.core.windows.net/videos/${reportResponse.data.videoId}/${reportResponse.data.videoId}.mp4`;
+        }
+      } catch (error) {
+        console.error('비디오 정보 가져오기 실패:', error);
+      }
+
       return {
         id: event.postId,
         coordinates: { lat: event.latitude, lng: event.longitude },
@@ -191,7 +202,7 @@ const refreshData = async () => {
         metadata: {
           likes: event.reactionCount || 0,
           comments: 0,
-          videoUrl: event.blurredVideoUri || '',
+          videoUrl: videoUrl,
           imageUrl: ''
         }
       };

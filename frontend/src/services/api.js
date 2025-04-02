@@ -145,6 +145,7 @@ export const reportApiService = {
   updateReport: (id, reportData) => reportsApi.put(`/reports/${id}`, reportData),
   deleteReport: (id) => reportsApi.delete(`/reports/${id}`),
   submitReport: (reportData) => reportsApi.post('/reports/receivereport', reportData),
+  getLatestReportByEventId: (eventId) => reportsApi.get(`/reports/latestByEvent/${eventId}`),
   getReportsByUserId: async (userId, config = {}) => {
     console.log('Fetching reports for userId:', userId);
     try {
