@@ -133,11 +133,14 @@ public class Report {
         //implement business logic here:
         repository().findById(assignedToEvent.getReportId()).ifPresent(report->{
 
+            report.eventId = assignedToEvent.getEventId();
             report.status = "pending";
             repository().save(report);
 
-            EventVideoIdUpdated eventVideoIdUpdated = new EventVideoIdUpdated(report);
-            eventVideoIdUpdated.publishAfterCommit();
+            if(report.getEventId() != null && report.getVideoId() != null) {
+                EventVideoIdUpdated eventVideoIdUpdated = new EventVideoIdUpdated(report);
+                eventVideoIdUpdated.publishAfterCommit();
+            }
 
          });
 
