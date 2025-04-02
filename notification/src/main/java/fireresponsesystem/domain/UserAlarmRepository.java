@@ -18,8 +18,9 @@ public interface UserAlarmRepository extends JpaRepository<UserAlarm, Long> {
 
     List<UserAlarm> findByUserIdOrderByCreatedAtDesc(String userId);
 
-    @Query("SELECT ua FROM UserAlarm ua WHERE ua.userId = :userId AND ua.isRead = false AND " +
-           "(ua.alarmType = 'USER_SPECIFIC' OR (ua.alarmType = 'LOCATION_BASED' AND ua.createdAt >= :startDate)) " +
+    @Query("SELECT ua FROM UserAlarm ua WHERE " +
+           "(ua.alarmType = 'USER_SPECIFIC' AND ua.userId = :userId AND ua.isRead = false) OR " +
+           "(ua.alarmType = 'LOCATION_BASED' AND ua.createdAt >= :startDate AND ua.isRead = false) " +
            "ORDER BY ua.createdAt DESC")
     List<UserAlarm> findUnreadAlarmsWithTimeWindowForLocationBased(
         @Param("userId") String userId,

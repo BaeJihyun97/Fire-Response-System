@@ -29,31 +29,29 @@ public class UserAlarmController {
     @GetMapping("/unread")
     public UserAlarmResponse getUnreadAlarmByUserId(
             @RequestParam String userId,
-            @RequestParam(required = false) Double latitude,
-            @RequestParam(required = false) Double longitude) {
+            @RequestParam Double latitude,
+            @RequestParam Double longitude) {
 
         // Calculate the start date for 24-hour window (only used for LOCATION_BASED alarms)
         Date startDate = new Date(System.currentTimeMillis() - (MAX_AGE_HOURS * 60 * 60 * 1000));
 
-        // Get all unread alarms, with time window only for LOCATION_BASED alarms
+        // Get all unread alarms
         List<UserAlarm> alarms = userAlarmRepository.findUnreadAlarmsWithTimeWindowForLocationBased(userId, startDate);
 
-        // Filter alarms based on location if coordinates are provided
-        if (latitude != null && longitude != null) {
-            alarms = alarms.stream()
-                .filter(alarm -> {
-                    if (alarm.getAlarmType() == AlarmType.LOCATION_BASED) {
-                        // Check if the alarm is within 5km
-                        double distance = LocationUtils.calculateDistance(
-                            latitude, longitude,
-                            alarm.getLatitude(), alarm.getLongitude()
-                        );
-                        return distance <= MAX_DISTANCE_KM;
-                    }
-                    return true; // Keep non-location-based alarms
-                })
-                .collect(Collectors.toList());
-        }
+        // Filter alarms based on location
+        alarms = alarms.stream()
+            .filter(alarm -> {
+                if (alarm.getAlarmType() == AlarmType.LOCATION_BASED) {
+                    // Check if the alarm is within 5km
+                    double distance = LocationUtils.calculateDistance(
+                        latitude, longitude,
+                        alarm.getLatitude(), alarm.getLongitude()
+                    );
+                    return distance <= MAX_DISTANCE_KM;
+                }
+                return true; // Keep non-location-based alarms
+            })
+            .collect(Collectors.toList());
 
         return new UserAlarmResponse(alarms);
     }
