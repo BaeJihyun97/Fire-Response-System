@@ -40,7 +40,6 @@ public class UserAlarmController {
 
         // Get all unread alarms
         List<UserAlarm> alarms = userAlarmRepository.findUnreadAlarmsWithTimeWindowForLocationBased(userId, startDate);
-        System.out.println(alarms);
         // Filter alarms based on location
         alarms = alarms.stream()
             .filter(alarm -> {

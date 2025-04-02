@@ -14,5 +14,6 @@ public interface QueriedAlarmRepository extends JpaRepository<QueriedAlarm, Long
     List<QueriedAlarm> findByUserAlarmOrderByQueriedAtDesc(UserAlarm userAlarm);
     List<QueriedAlarm> findByQueriedByOrderByQueriedAtDesc(String queriedBy);
     boolean existsByUserAlarm(UserAlarm userAlarm);
+    boolean existsByUserAlarmAndQueriedBy(UserAlarm userAlarm, String queriedBy);
 }
 //>>> PoEAA / Repository

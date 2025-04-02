@@ -7,7 +7,9 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "QueriedAlarm_table")
+@Table(name = "QueriedAlarm_table", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"userAlarmId", "queriedBy"})
+})
 @Data
 //<<< DDD / Aggregate Root
 public class QueriedAlarm {
@@ -15,7 +17,7 @@ public class QueriedAlarm {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "userAlarmId", nullable = false)
     private UserAlarm userAlarm;
 
@@ -33,6 +35,11 @@ public class QueriedAlarm {
 
     //<<< Clean Arch / Port Method
     public static void createQueriedAlarm(UserAlarm userAlarm, String queriedBy) {
+        // Check if a record already exists for this user and alarm
+        if (repository().existsByUserAlarmAndQueriedBy(userAlarm, queriedBy)) {
+            return; // Skip creating duplicate record
+        }
+
         QueriedAlarm queriedAlarm = new QueriedAlarm();
         queriedAlarm.setUserAlarm(userAlarm);
         queriedAlarm.setQueriedBy(queriedBy);
