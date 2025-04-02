@@ -1,6 +1,10 @@
 server:
   port: 8088
 
+spring:
+  main:
+    allow-bean-definition-overriding: true
+
 ---
 # admin 접근용
 
@@ -109,9 +113,9 @@ spring:
         - id: reportmanagement
           uri: http://reportmanagement:8080
           predicates:
-            - Path=/reports/**, /reports//**, 
-        - id: videoproccessing
-          uri: http://videoproccessing:8080
+            - Path=/reports/**, /reports/**, 
+        - id: videoprocessing
+          uri: http://videoprocessing:8080
           predicates:
             - Path=/videoAnalyses/**, /videos/**, 
         - id: eventmanagement
@@ -135,23 +139,31 @@ spring:
           predicates:
             - Path=/**
       globalcors:
-        corsConfigurations:
-          '[/**]':
-            allowedOrigins:
-              - "http://keycloak"
-              - "http://reportmanagement"
-              - "http://videoproccessing"
-              - "http://eventmanagement"
-              - "http://aianalysis"
-              - "http://feedservice"
-              - "http://notification"
-              - "http://frontend"
-              - "http://localhost"
-            allowedMethods:
+        cors-configurations:
+          "[/**]":
+            allowedOriginPatterns:
               - "*"
+            # allowedOrigins:
+              # - "http://keycloak"
+              # - "http://reportmanagement"
+              # - "http://videoprocessing"
+              # - "http://eventmanagement"
+              # - "http://aianalysis"
+              # - "http://feedservice"
+              # - "http://notification"
+              # - "http://frontend"
+              # - "http://localhost"
+            allowedMethods:
+              - PUT
+              - GET
+              - POST
+              - DELETE
+              - PATCH
+              - OPTIONS
             allowedHeaders:
               - "*"
             allowCredentials: true
+              # - true
 
 server:
   port: 8080
