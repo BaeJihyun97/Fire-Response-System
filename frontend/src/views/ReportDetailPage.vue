@@ -3,8 +3,8 @@
     <!-- 상단 네비게이션 바 -->
     <AppHeader title="제보 상세" :showBackButton="true" @back="goBack">
       <template #actions>
-        <button 
-          @click="refreshData" 
+        <button
+          @click="refreshData"
           class="p-2 rounded-full hover:bg-gray-100"
           :class="{ 'animate-spin': isRefreshing }"
         >
@@ -25,8 +25,8 @@
         <AlertTriangle class="mx-auto h-12 w-12 text-red-500" />
         <h3 class="mt-2 text-sm font-medium text-gray-900">데이터를 불러오는데 실패했습니다</h3>
         <p class="mt-1 text-sm text-gray-500">{{ error }}</p>
-        <button 
-          @click="refreshData" 
+        <button
+          @click="refreshData"
           class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
         >
           다시 시도
@@ -38,7 +38,7 @@
         <!-- 상태 배지 -->
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-2">
-            <span 
+            <span
               class="px-3 py-1 rounded-full text-sm font-medium"
               :class="{
                 'bg-red-100 text-red-800': report.isFire,
@@ -47,20 +47,21 @@
             >
               {{ report.isFire ? '화재 발생' : '화재 의심' }}
             </span>
-            <span 
-              v-if="report.verified" 
+            <span
+              v-if="report.verified"
               class="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 flex items-center"
             >
               <Shield class="h-3 w-3 mr-1" />
               확인됨
             </span>
           </div>
-          <span 
+          <span
             class="px-3 py-1 rounded-full text-sm font-medium"
             :class="{
               'bg-red-100 text-red-800': report.riskLevel === '높음',
               'bg-orange-100 text-orange-800': report.riskLevel === '중간',
-              'bg-green-100 text-green-800': report.riskLevel === '낮음'
+              'bg-green-100 text-green-800': report.riskLevel === '낮음',
+              'bg-purple-100 text-purple-800': report.riskLevel === 'N/A'
             }"
           >
             위험도: {{ report.riskLevel }}
@@ -71,20 +72,20 @@
         <div class="relative rounded-xl overflow-hidden">
           <!-- 비디오가 있으면 비디오 플레이어 표시 -->
           <div v-if="report.metadata.videoUrl" class="w-full aspect-video">
-            <VideoPlayer 
-              :videoUrl="report.metadata.videoUrl" 
+            <VideoPlayer
+              :videoUrl="report.metadata.videoUrl"
               :posterUrl="report.metadata.imageUrl"
               :showControls="true"
               :muted="false"
               class="w-full h-full"
             />
           </div>
-          
+
           <!-- 비디오가 없으면 이미지 표시 -->
-          <img 
-            v-else 
-            :src="report.metadata.imageUrl" 
-            alt="화재 이미지" 
+          <img
+            v-else
+            :src="report.metadata.imageUrl"
+            alt="화재 이미지"
             class="w-full aspect-video object-cover"
           />
         </div>
@@ -97,8 +98,8 @@
           </div>
           <div class="flex items-center justify-between">
             <span class="text-sm font-medium">{{ displayLocation }}</span>
-            <button 
-              @click="showMap" 
+            <button
+              @click="showMap"
               class="text-sm text-primary-600 hover:text-primary-700"
             >
               지도에서 보기
@@ -172,17 +173,17 @@
                         ]
                       }
                     ]" :key="index" class="mb-3">
-                      <button 
+                      <button
                         @click="toggleSection(index)"
                         class="w-full flex items-center justify-between p-2 rounded-lg hover:bg-red-50 transition-colors"
                       >
                         <span class="text-sm font-medium text-red-700">{{ section.title }}</span>
-                        <ChevronDown 
+                        <ChevronDown
                           class="h-4 w-4 text-red-500 transition-transform"
                           :class="{ 'rotate-180': openSections[index] }"
                         />
                       </button>
-                      <div 
+                      <div
                         v-show="openSections[index]"
                         class="mt-2 pl-4 space-y-1"
                       >
@@ -195,7 +196,7 @@
                 </div>
               </div>
             </div>
-            
+
             <div v-else-if="report.riskLevel === '높음'" class="space-y-3">
               <div class="flex items-start">
                 <AlertTriangle class="h-5 w-5 text-orange-500 mt-0.5 mr-2" />
@@ -240,17 +241,17 @@
                         ]
                       }
                     ]" :key="index" class="mb-3">
-                      <button 
+                      <button
                         @click="toggleSection(index)"
                         class="w-full flex items-center justify-between p-2 rounded-lg hover:bg-orange-50 transition-colors"
                       >
                         <span class="text-sm font-medium text-orange-700">{{ section.title }}</span>
-                        <ChevronDown 
+                        <ChevronDown
                           class="h-4 w-4 text-orange-500 transition-transform"
                           :class="{ 'rotate-180': openSections[index] }"
                         />
                       </button>
-                      <div 
+                      <div
                         v-show="openSections[index]"
                         class="mt-2 pl-4 space-y-1"
                       >
@@ -263,7 +264,7 @@
                 </div>
               </div>
             </div>
-            
+
             <div v-else-if="report.riskLevel === '중간'" class="space-y-3">
               <div class="flex items-start">
                 <AlertTriangle class="h-5 w-5 text-yellow-500 mt-0.5 mr-2" />
@@ -308,17 +309,17 @@
                         ]
                       }
                     ]" :key="index" class="mb-3">
-                      <button 
+                      <button
                         @click="toggleSection(index)"
                         class="w-full flex items-center justify-between p-2 rounded-lg hover:bg-yellow-50 transition-colors"
                       >
                         <span class="text-sm font-medium text-yellow-700">{{ section.title }}</span>
-                        <ChevronDown 
+                        <ChevronDown
                           class="h-4 w-4 text-yellow-500 transition-transform"
                           :class="{ 'rotate-180': openSections[index] }"
                         />
                       </button>
-                      <div 
+                      <div
                         v-show="openSections[index]"
                         class="mt-2 pl-4 space-y-1"
                       >
@@ -331,7 +332,7 @@
                 </div>
               </div>
             </div>
-            
+
             <div v-else-if="report.riskLevel === '낮음'" class="space-y-3">
               <div class="flex items-start">
                 <AlertTriangle class="h-5 w-5 text-green-500 mt-0.5 mr-2" />
@@ -376,17 +377,85 @@
                         ]
                       }
                     ]" :key="index" class="mb-3">
-                      <button 
+                      <button
                         @click="toggleSection(index)"
                         class="w-full flex items-center justify-between p-2 rounded-lg hover:bg-green-50 transition-colors"
                       >
                         <span class="text-sm font-medium text-green-700">{{ section.title }}</span>
-                        <ChevronDown 
+                        <ChevronDown
                           class="h-4 w-4 text-green-500 transition-transform"
                           :class="{ 'rotate-180': openSections[index] }"
                         />
                       </button>
-                      <div 
+                      <div
+                        v-show="openSections[index]"
+                        class="mt-2 pl-4 space-y-1"
+                      >
+                        <div v-for="(item, itemIndex) in section.items" :key="itemIndex" class="text-sm text-gray-700">
+                          • {{ item }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-else-if="report.riskLevel === 'N/A'" class="space-y-3">
+              <div class="flex items-start">
+                <AlertTriangle class="h-5 w-5 text-purple-500 mt-0.5 mr-2" />
+                <div class="flex-1">
+                  <h4 class="font-medium text-purple-800">기본 안전 수칙 준수</h4>
+                  <div class="mt-2">
+                    <div v-for="(section, index) in [
+                      {
+                        title: '기본 안전 수칙',
+                        items: [
+                          '화재 감지기, 소화기 등 안전장비 점검',
+                          '비상구 주변 물건 정리',
+                          '가스, 전기 사용 시 주의',
+                          '화기 취급 시 주의'
+                        ]
+                      },
+                      {
+                        title: '대비 사항',
+                        items: [
+                          '비상시 연락처 확인',
+                          '대피 경로 숙지',
+                          '소화기 사용법 확인',
+                          '응급처치 방법 숙지'
+                        ]
+                      },
+                      {
+                        title: '일상적 점검',
+                        items: [
+                          '전기 콘센트 과부하 확인',
+                          '가스 누수 여부 확인',
+                          '화재 감지기 작동 확인',
+                          '소화기 유효기간 확인'
+                        ]
+                      },
+                      {
+                        title: '교육 및 훈련',
+                        items: [
+                          '소방훈련 참여',
+                          '화재 대응 매뉴얼 숙지',
+                          '응급처치 교육 참여',
+                          '안전교육 이수'
+                        ]
+                      }
+                    ]" :key="index" class="mb-3">
+                      <button
+                        @click="toggleSection(index)"
+                        class="w-full flex items-center justify-between p-2 rounded-lg hover:bg-purple-50 transition-colors"
+                      >
+                        <span class="text-sm font-medium text-purple-700">{{ section.title }}</span>
+                        <ChevronDown
+                          class="h-4 w-4 text-purple-500 transition-transform"
+                          :class="{ 'rotate-180': openSections[index] }"
+                        />
+                      </button>
+                      <div
                         v-show="openSections[index]"
                         class="mt-2 pl-4 space-y-1"
                       >
@@ -427,8 +496,8 @@
                   <h4 class="font-medium">연기 감지 결과</h4>
                 </div>
                 <p class="text-sm text-gray-700">
-                  {{ aiAnalysis.smoke.present ? 
-                    `연기가 감지되었습니다. (색상: ${aiAnalysis.smoke.color}, 농도: ${aiAnalysis.smoke.density})` : 
+                  {{ aiAnalysis.smoke.present ?
+                    `연기가 감지되었습니다. (색상: ${aiAnalysis.smoke.color}, 농도: ${aiAnalysis.smoke.density})` :
                     '연기가 감지되지 않았습니다.' }}
                 </p>
               </div>
@@ -455,8 +524,8 @@
                   <h4 class="font-medium">화재 확산 상태</h4>
                 </div>
                 <p class="text-sm text-gray-700">
-                  {{ aiAnalysis.fire_spread.spreading ? 
-                    '화재가 확산되고 있습니다.' : 
+                  {{ aiAnalysis.fire_spread.spreading ?
+                    '화재가 확산되고 있습니다.' :
                     '화재가 확산되고 있지 않습니다.' }}
                 </p>
               </div>
@@ -470,8 +539,8 @@
                   <h4 class="font-medium">소방대원 감지 결과</h4>
                 </div>
                 <p class="text-sm text-gray-700">
-                  {{ aiAnalysis.firefighting_response.responders_present ? 
-                    '소방대원이 현장에 있습니다.' : 
+                  {{ aiAnalysis.firefighting_response.responders_present ?
+                    '소방대원이 현장에 있습니다.' :
                     '소방대원이 아직 도착하지 않았습니다.' }}
                 </p>
               </div>
@@ -485,8 +554,8 @@
                   <h4 class="font-medium">감지된 객체</h4>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                  <span 
-                    v-for="(object, index) in aiAnalysis.objects" 
+                  <span
+                    v-for="(object, index) in aiAnalysis.objects"
                     :key="index"
                     class="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs"
                   >
@@ -500,25 +569,25 @@
 
         <!-- 액션 버튼 -->
         <div class="grid grid-cols-3 gap-2">
-          <button 
-            @click="confirmFire" 
+          <button
+            @click="confirmFire"
             class="flex items-center justify-center text-sm font-medium py-2 rounded-lg"
             :class="isConfirmed ? 'text-red-600 bg-red-50' : 'text-gray-600 bg-gray-50'"
           >
             <AlertTriangle :class="['h-5 w-5 mr-1.5', isConfirmed ? 'fill-red-100' : '']" />
             <span>위험해요 {{ report.metadata.likes }}</span>
           </button>
-          
-          <button 
-            @click="openComments" 
+
+          <button
+            @click="openComments"
             class="flex items-center justify-center text-gray-600 text-sm font-medium py-2 rounded-lg bg-gray-50"
           >
             <MessageSquare class="h-5 w-5 mr-1.5" />
             <span>댓글 {{ report.metadata.comments }}</span>
           </button>
-          
-          <button 
-            @click="shareReport" 
+
+          <button
+            @click="shareReport"
             class="flex items-center justify-center text-gray-600 text-sm font-medium py-2 rounded-lg bg-gray-50"
           >
             <Share2 class="h-5 w-5 mr-1.5" />
@@ -553,7 +622,7 @@ import VideoPlayer from '../components/VideoPlayer.vue';
 import CommentSection from '../components/CommentSection.vue';
 import MapView from './MapView.vue';
 import { reverseGeocode } from '../services/geocodingService';
-import { postApi } from '../services/api';
+import { postApi, reportApiService, videoApiService } from '../services/api';
 
 const router = useRouter();
 const route = useRoute();
@@ -583,6 +652,31 @@ const report = ref({
   }
 });
 
+// AI 분석 결과 데이터
+const aiAnalysis = ref({
+  fire_detected: false,
+  fire_size: 'N/A',
+  flame_color: [],
+  smoke: {
+    present: false,
+    color: 'N/A',
+    density: 'N/A'
+  },
+  objects: [],
+  people_or_animals: {
+    present: false,
+    details: ''
+  },
+  fire_spread: {
+    spreading: false,
+    indicators: []
+  },
+  firefighting_response: {
+    responders_present: false
+  },
+  severity: 'N/A'
+});
+
 // 아코디언 섹션 상태 관리
 const openSections = ref([false, false, false, false]);
 
@@ -595,12 +689,12 @@ const toggleSection = (index) => {
 const refreshData = async () => {
   isRefreshing.value = true;
   error.value = null;
-  
+
   try {
     const postId = route.params.id;
     const response = await postApi.getPost(postId);
     const post = response.data;
-    
+
     // API 응답 데이터를 현재 구조에 맞게 변환
     report.value = {
       id: post.postId,
@@ -617,9 +711,26 @@ const refreshData = async () => {
         imageUrl: ''
       }
     };
-    
+
     // 위치 정보 가져오기
     await loadLocationInfo();
+    let videoId;
+    try {
+      const reportResponse = await reportApiService.getLatestReportByEventId(post.eventId);
+      if (reportResponse.data && reportResponse.data.videoId) {
+        videoId = reportResponse.data.videoId;
+        report.value.metadata.videoUrl = `https://team05sa.blob.core.windows.net/videos/${reportResponse.data.videoId}/${reportResponse.data.videoId}.mp4`;
+      }
+    } catch (error) {
+      console.error('비디오 정보 가져오기 실패:', error);
+    }
+    const videoInfo = await videoApiService.getVideo(videoId);
+    const ai = videoInfo.data.latest_analysis;
+    if (ai !== null) {
+      aiAnalysis.value = ai;
+      report.value.isFire = ai.fire_detected;
+      report.value.riskLevel = ai.severity;
+    }
   } catch (err) {
     error.value = '데이터를 불러오는데 실패했습니다. 다시 시도해주세요.';
     console.error('데이터 로딩 오류:', err);
@@ -629,12 +740,43 @@ const refreshData = async () => {
   }
 };
 
+const formatAddress = (address) => {
+  if (!address) return '';
+
+  const parts = [];
+  if (address.province) parts.push(address.province);
+  if (address.city) parts.push(address.city);
+  if (address.borough) parts.push(address.borough);
+  if (address.quarter) parts.push(address.quarter);
+  if (address.road) parts.push(address.road);
+  if (address.house_number) parts.push(address.house_number);
+
+  return parts.join(' ');
+};
+
+const getLocationInfo = async (coordinates) => {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coordinates.lat}&lon=${coordinates.lng}&zoom=18&addressdetails=1&accept-language=ko`
+    );
+    const data = await response.json();
+
+    if (data && data.address) {
+      return formatAddress(data.address);
+    }
+    return '위치 정보 없음';
+  } catch (error) {
+    console.error('위치 정보 로딩 실패:', error);
+    return '위치 정보 없음';
+  }
+};
+
 // 위치 정보 로드
 const loadLocationInfo = async () => {
   try {
-    const result = await reverseGeocode(report.value.coordinates.lat, report.value.coordinates.lng);
+    const result = await getLocationInfo(report.value.coordinates);
     formattedAddress.value = result;
-    displayLocation.value = result.fullAddress;
+    displayLocation.value = result;
   } catch (err) {
     console.error('위치 정보 로딩 오류:', err);
     displayLocation.value = `위도: ${report.value.coordinates.lat}, 경도: ${report.value.coordinates.lng}`;
@@ -685,31 +827,6 @@ const shareReport = async () => {
     console.error('공유하기 오류:', err);
   }
 };
-
-// AI 분석 결과 데이터
-const aiAnalysis = ref({
-  fire_detected: false,
-  fire_size: 'N/A',
-  flame_color: [],
-  smoke: {
-    present: false,
-    color: 'N/A',
-    density: 'N/A'
-  },
-  objects: ['사람', '의자', '조명', '책상', '천장', '천장 조명'],
-  people_or_animals: {
-    present: true,
-    details: '2명 이상의 사람이 있음. 화재와 관련 없음.'
-  },
-  fire_spread: {
-    spreading: false,
-    indicators: []
-  },
-  firefighting_response: {
-    responders_present: false
-  },
-  severity: 'N/A'
-});
 
 // 초기 데이터 로드
 onMounted(() => {

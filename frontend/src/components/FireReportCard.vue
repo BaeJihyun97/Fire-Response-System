@@ -1,5 +1,5 @@
 <template>
-  <div 
+  <div
     class="bg-white rounded-xl shadow-soft overflow-hidden mb-4 cursor-pointer hover:shadow-md transition-shadow duration-200"
     @click="goToDetail"
   >
@@ -11,7 +11,7 @@
             <div class="h-8 w-8 rounded-full bg-gray-200 overflow-hidden mr-2">
               <img src="https://ui-avatars.com/api/?name=🔥&background=DC2626&color=fff&size=128" alt="화재" class="h-full w-full object-cover" />
             </div>
-            <h3 class="font-medium text-gray-900">화재 #{{ fire.id }}</h3>
+            <h3 class="font-medium text-gray-900">{{ fire.isFire ? '화재' : '화재 의심' }} #{{ fire.id }}</h3>
             <span v-if="fire.verified" class="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-800 border border-blue-200 rounded-full flex items-center">
               <Shield class="h-3 w-3 mr-1" />
               확인됨
@@ -20,8 +20,8 @@
           <div class="flex items-center text-xs text-gray-500 mt-0.5">
             <MapPin class="h-3 w-3 mr-1" />
             <!-- 위치 클릭 가능하도록 수정 -->
-            <button 
-              @click.stop="showMap" 
+            <button
+              @click.stop="showMap"
               class="hover:text-primary-600 hover:underline"
               :disabled="isLoadingMap"
             >
@@ -36,21 +36,20 @@
           </div>
         </div>
       </div>
-      
+
       <div class="flex items-center">
-        <span 
-          class="mr-2 px-2 py-0.5 rounded-full text-xs"
+        <span
+          class="px-3 py-1 rounded-full text-sm font-medium"
           :class="{
-            'bg-red-100 text-red-800': fire.riskLevel === '심각',
-            'bg-orange-100 text-orange-800': fire.riskLevel === '높음',
-            'bg-yellow-100 text-yellow-800': fire.riskLevel === '중간'
+            'bg-red-100 text-red-800': fire.isFire,
+            'bg-yellow-100 text-yellow-800': !fire.isFire
           }"
         >
-          {{ fire.riskLevel }}
+          {{ fire.isFire ? '화재 발생' : '화재 의심' }}
         </span>
       </div>
     </div>
-    
+
     <!-- 미디어 (비디오 또는 이미지) -->
     <div class="relative">
       <!-- 비디오가 있으면 비디오 플레이어 표시 -->
@@ -71,70 +70,70 @@
           </div>
         </div>
       </div>
-      
+
       <!-- 비디오가 없으면 이미지 표시 -->
-      <img 
-        v-else-if="fire.metadata.imageUrl" 
-        :src="fire.metadata.imageUrl" 
-        alt="화재 이미지" 
+      <img
+        v-else-if="fire.metadata.imageUrl"
+        :src="fire.metadata.imageUrl"
+        alt="화재 이미지"
         class="w-full h-96 object-cover"
         @click.stop="viewDetail"
       />
-      
+
       <!-- 위험도 표시 - 위험도에 따라 색상 차별화 -->
-      <div 
+      <div
         class="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-medium flex items-center"
         :class="riskLevelClass"
       >
         <AlertTriangle class="h-3 w-3 mr-1" />
         위험도: {{ fire.riskLevel }}
       </div>
-      
+
       <!-- 비디오 표시 아이콘 -->
-      <div 
-        v-if="fire.metadata.videoUrl" 
+      <div
+        v-if="fire.metadata.videoUrl"
         class="absolute bottom-3 left-3 bg-black bg-opacity-60 rounded-full p-1.5"
       >
         <Video class="h-4 w-4 text-white" />
       </div>
     </div>
-    
+
     <!-- 내용 -->
     <div class="p-4">
       <p class="text-gray-800 text-sm">{{ fire.isFire ? '화재가 발생했습니다.' : '화재 의심 상황입니다.' }}</p>
-      
+
       <!-- 액션 버튼 -->
       <div class="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-gray-100">
-        <button 
-          @click.stop="confirmFire" 
+        <button
+          @click.stop="confirmFire"
           class="flex items-center justify-center text-sm font-medium py-1"
           :class="isConfirmed ? 'text-red-600' : 'text-gray-600'"
         >
           <AlertTriangle :class="['h-5 w-5 mr-1.5', isConfirmed ? 'fill-red-100' : '']" />
           <span>위험해요 {{ fire.metadata.likes }}</span>
         </button>
-        
+
         <button @click.stop="openComments" class="flex items-center justify-center text-gray-600 text-sm font-medium py-1">
           <MessageSquare class="h-5 w-5 mr-1.5" />
           <span>댓글 {{ fire.metadata.comments }}</span>
         </button>
-        
+
         <button @click.stop="shareReport" class="flex items-center justify-center text-gray-600 text-sm font-medium py-1">
           <Share2 class="h-5 w-5 mr-1.5" />
           <span>공유</span>
         </button>
       </div>
     </div>
-    
+
     <!-- 댓글 섹션 (토글) -->
-    <div 
-      v-if="showComments" 
+    <div
+      v-if="showComments"
       class="px-4 pb-4 pt-2 bg-gray-50 border-t border-gray-100"
       @click.stop
     >
       <comment-section :post-id="parseInt(fire.id)" />
     </div>
-    
+
     <!-- 지도 모달 -->
     <MapView
       v-if="showMapModal"
@@ -154,7 +153,7 @@ import CommentSection from './CommentSection.vue';
 import MapView from '../views/MapView.vue';
 import VideoPlayer from './VideoPlayer.vue';
 import { reverseGeocode } from '../services/geocodingService';
-import { postApi } from '../services/api';
+import { postApi, reportApiService, videoApiService } from '../services/api';
 
 const props = defineProps({
   fire: {
@@ -211,37 +210,37 @@ const displayLocation = computed(() => {
   if (formattedAddress.value?.fullAddress) {
     return formattedAddress.value.fullAddress;
   }
-  
+
   // location이 있으면 그것을 사용
   if (props.fire.location) {
     return props.fire.location;
   }
-  
+
   // location이 없으면 좌표 표시
   if (props.fire.coordinates) {
     return `위도: ${props.fire.coordinates.lat.toFixed(5)}, 경도: ${props.fire.coordinates.lng.toFixed(5)}`;
   }
-  
+
   return '위치 정보 없음';
 });
 
 // 컴포넌트 마운트 시 좌표로부터 주소 변환
 onMounted(async () => {
   console.log('FireReportCard 마운트됨, 좌표:', props.fire.coordinates);
-  
+
   if (!props.fire.coordinates) {
     console.error('좌표 정보가 없습니다');
     isLoadingAddress.value = false;
     return;
   }
-  
+
   try {
     // 좌표를 주소로 변환 (역지오코딩)
     const address = await reverseGeocode(
-      props.fire.coordinates.lat, 
+      props.fire.coordinates.lat,
       props.fire.coordinates.lng
     );
-    
+
     formattedAddress.value = address;
     console.log('주소 변환 성공:', address);
   } catch (error) {
@@ -257,11 +256,31 @@ const viewDetail = (event) => {
   if (event && event.target && event.target.tagName === 'VIDEO') {
     return;
   }
-  
+
   if (props.fire.id) {
     router.push(`/posts/${props.fire.id}`);
   }
 };
+
+const getVideoData = async () => {
+  try {
+    const postId = props.fire.id;
+    const response = await postApi.getPost(postId);
+    const post = response.data;
+    const reportResponse = await reportApiService.getLatestReportByEventId(post.eventId);
+    if (reportResponse.data && reportResponse.data.videoId) {
+      const videoId = reportResponse.data.videoId;
+      const videoInfo = await videoApiService.getVideo(videoId);
+      const ai = videoInfo.data.latest_analysis;
+      if (ai !== null) {
+        props.fire.isFire = ai.fire_detected;
+        props.fire.riskLevel = ai.severity;
+      }
+    }
+  } catch (error) {
+    console.log(error);
+  }
+}
 
 // 댓글 토글
 const openComments = () => {
@@ -292,7 +311,7 @@ const confirmFire = async () => {
 
     // API 요청 보내기
     await postApi.reactToPost(props.fire.id, userId);
-    
+
     // UI 업데이트
     isConfirmed.value = !isConfirmed.value;
     if (isConfirmed.value) {
@@ -328,7 +347,7 @@ const showMap = () => {
     // 이미 로딩 중이면 중복 요청 방지
     if (isLoadingMap.value) return;
     isLoadingMap.value = true;
-    
+
     // 좌표가 있는 경우에만 지도 표시
     if (props.fire.coordinates) {
       showMapModal.value = true;
@@ -349,7 +368,7 @@ const formatTime = (timestamp) => {
   const date = new Date(timestamp);
   const now = new Date();
   const diff = now - date;
-  
+
   // 1분 미만
   if (diff < 60000) return '방금 전';
   // 1시간 미만
@@ -411,6 +430,7 @@ const loadVideo = () => {
 onMounted(() => {
   if (props.fire.metadata.videoUrl) {
     loadVideo();
+    getVideoData();
   }
 });
 
