@@ -17,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.core.config import Settings, get_settings
+from app.core.auth import get_current_user, TokenData
 from app.models.video import Counter, Video, VideoAnalysisReport
 from app.schemas.events import (
     VideoAnalysisCompletedEvent,
@@ -37,7 +38,7 @@ class VideoUploadResponse(BaseModel):
 class VideoAnalysisRequest(BaseModel):
     report_id: int
     event_id: int
-    user_id: int
+    user_id: str
 
 
 # Initialize services
@@ -126,6 +127,7 @@ async def upload_video(
     file: UploadFile = File(...),
     report_id: int = Form(...),
     settings: Settings = Depends(get_settings),
+    current_user: TokenData = Depends(get_current_user),
 ):
     """Upload a video file directly."""
     # Validate file extension
@@ -197,7 +199,10 @@ async def upload_video(
 # TODO
 @app.post("/videos/{video_id}/analyze")
 async def analyze_video(
-    video_id: int, request: VideoAnalysisRequest, background_tasks: BackgroundTasks
+    video_id: int,
+    request: VideoAnalysisRequest,
+    background_tasks: BackgroundTasks,
+    current_user: TokenData = Depends(get_current_user),
 ):
     """Trigger video analysis for a specific video."""
     video = await Video.find_one({"video_id": video_id})
@@ -208,7 +213,7 @@ async def analyze_video(
         video_id=video_id,
         report_id=request.report_id,
         event_id=request.event_id,
-        user_id=request.user_id,
+        user_id=current_user.user_id,  # Use the authenticated user's ID
     )
 
     # Start analysis in background

@@ -30,7 +30,7 @@ class VideoAnalysisRequestedEvent(BaseModel):
     video_id: int
     report_id: int
     event_id: int
-    user_id: int
+    user_id: str
 
     model_config = ConfigDict(
         extra="ignore",

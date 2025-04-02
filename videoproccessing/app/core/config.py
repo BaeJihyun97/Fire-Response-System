@@ -35,6 +35,13 @@ class Settings(BaseSettings):
     max_file_size: int = Field(default=100 * 1024 * 1024)  # 100MB in bytes
     allowed_video_extensions: Set[str] = Field(default={".mp4", ".mov", ".avi", ".mkv"})
 
+    # JWT Settings
+    jwt_secret_key: str = Field(
+        default="your-secret-key-here"
+    )  # Change this in production!
+    jwt_algorithm: str = Field(default="HS256")
+    jwt_access_token_expire_minutes: int = Field(default=30)
+
     class Config:
         env_file = ".env"
         case_sensitive = False

@@ -1,6 +1,8 @@
 import json
+import uuid
 import asyncio
 from typing import Callable, Dict, Type
+from datetime import datetime, timedelta
 from confluent_kafka import Consumer, Producer, KafkaException
 from pydantic import BaseModel
 from app.core.config import get_settings
@@ -79,7 +81,7 @@ class KafkaConsumer:
                 "sasl.mechanism": "PLAIN",
                 "sasl.username": "$ConnectionString",
                 "sasl.password": connection_string,
-                "group.id": "video-processing-group",
+                "group.id": f"video-processing-group-{uuid.uuid4()}",
                 "auto.offset.reset": "earliest",
                 "enable.auto.commit": True,
             }
@@ -113,6 +115,7 @@ class KafkaConsumer:
             try:
                 # Poll for messages
                 msg = self.consumer.poll(1.0)
+                time_threshold = datetime.now() - timedelta(minutes=30)
 
                 if msg is None:
                     await asyncio.sleep(0.1)
@@ -120,6 +123,11 @@ class KafkaConsumer:
 
                 if msg.error():
                     print(f"Consumer error: {msg.error()}")
+                    continue
+
+                message_timestamp = datetime.fromtimestamp(msg.timestamp()[1] / 1000.0)
+                if message_timestamp < time_threshold:
+                    print(f"Skipping old message from {message_timestamp}")
                     continue
 
                 try:
