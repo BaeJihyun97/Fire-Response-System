@@ -85,34 +85,10 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { AlertTriangle, CheckCircle, Locate } from 'lucide-vue-next';
 import AppHeader from '../components/AppHeader.vue';
+import { postApi } from '../services/api';
 
-// 화재 제보 데이터 (실제로는 API에서 가져옴)
-const fireReports = ref([
-  {
-    id: '1',
-    username: '소방지킴이',
-    coordinates: { lat: 37.498095, lng: 127.027610 }, // 강남역 좌표
-    description: '상업 건물 3층에서 화재 발생. 연기가 심하게 나고 있습니다.',
-    riskLevel: '높음',
-    verified: true
-  },
-  {
-    id: "2",
-    username: "안전제일",
-    coordinates: { lat: 37.526120, lng: 126.925771 }, // 여의도 공원 좌표
-    description: "공원 동쪽 입구 근처에서 작은 산불 발생. 소방차 출동 중입니다.",
-    riskLevel: "중간",
-    verified: true
-  },
-  {
-    id: "3",
-    username: "시민제보자",
-    coordinates: { lat: 37.566535, lng: 126.977969 }, // 서울시청 좌표
-    description: "남산타워 근처에서 연기가 보입니다. 화재인지 확인 부탁드립니다.",
-    riskLevel: "낮음",
-    verified: true
-  }
-]);
+// 화재 제보 데이터
+const fireReports = ref([]);
 
 // 상태 변수
 const isLoading = ref(true);
@@ -126,6 +102,45 @@ let map = null;
 let markers = [];
 let userMarker = null;
 let infoWindows = [];
+
+// posts 데이터 로드
+const loadPosts = async () => {
+  try {
+    console.log('posts 데이터 로드 시작');
+    const response = await postApi.getPosts();
+    console.log('서버 응답:', response);
+    
+    // 실제 위치가 있는 데이터만 필터링 (위도/경도가 1.0이 아닌 데이터)
+    const validPosts = response.data.filter(post => 
+      post.latitude !== 1.0 && post.longitude !== 1.0 &&
+      post.latitude !== 1.3 && post.longitude !== 0.3
+    );
+    console.log('유효한 posts:', validPosts);
+    
+    // posts 데이터를 fireReports 형식으로 변환
+    fireReports.value = validPosts.map(post => ({
+      id: post.postId.toString(),
+      username: '',
+      coordinates: { lat: post.latitude, lng: post.longitude },
+      description: `제보 #${post.postId}`,
+      riskLevel: '중간',
+      verified: false
+    }));
+    
+    console.log('변환된 fireReports:', fireReports.value);
+    
+    // 마커 업데이트
+    if (map && window.naver && window.naver.maps) {
+      console.log('마커 업데이트 시작');
+      createFireMarkers();
+      fitAllMarkersInView();
+    } else {
+      console.log('지도가 아직 초기화되지 않았습니다.');
+    }
+  } catch (error) {
+    console.error('게시물 데이터 로드 실패:', error);
+  }
+};
 
 // 지도 초기화 함수
 const initMap = async () => {
@@ -154,11 +169,11 @@ const initMap = async () => {
     map = new window.naver.maps.Map('map', mapOptions);
     
     // 지도 로드 완료 이벤트 리스너 추가
-    window.naver.maps.Event.once(map, 'init_stylemap', () => {
+    window.naver.maps.Event.once(map, 'init_stylemap', async () => {
       console.log('지도 스타일 초기화 완료');
       
-      // 화재 제보 마커 생성
-      createFireMarkers();
+      // posts 데이터 로드
+      await loadPosts();
       
       // 사용자 위치가 있으면 사용자 위치 마커도 생성
       if (userLocation.value) {
@@ -247,7 +262,7 @@ const createFireMarkers = () => {
       const infoWindow = new window.naver.maps.InfoWindow({
         content: `
           <div style="padding: 10px; min-width: 200px;">
-            <h4 style="margin: 0 0 5px 0; font-weight: 600;">${fire.username}의 제보</h4>
+            <h4 style="margin: 0 0 5px 0; font-weight: 600;">${fire.username}화재</h4>
             <p style="margin: 0 0 5px 0; font-size: 12px; color: #666;">
               위험도: <span style="color: ${markerColor}; font-weight: bold;">${fire.riskLevel}</span>
             </p>
