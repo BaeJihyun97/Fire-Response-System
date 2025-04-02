@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @Data
 @ToString
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class IdentifiedAsFireEvent extends AbstractEvent {
+public class IdentifiedAsNonFireEvent extends AbstractEvent {
 
     private Long eventId;
     private Float longitude;

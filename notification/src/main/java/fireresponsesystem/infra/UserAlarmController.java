@@ -23,10 +23,13 @@ public class UserAlarmController {
     @Autowired
     UserAlarmRepository userAlarmRepository;
 
+    @Autowired
+    QueriedAlarmRepository queriedAlarmRepository;
+
     private static final double MAX_DISTANCE_KM = 5.0;
     private static final long MAX_AGE_HOURS = 24;
 
-    @GetMapping("/unread")
+    @GetMapping("/notification/unread")
     public UserAlarmResponse getUnreadAlarmByUserId(
             @RequestParam String userId,
             @RequestParam Double latitude,
@@ -37,26 +40,34 @@ public class UserAlarmController {
 
         // Get all unread alarms
         List<UserAlarm> alarms = userAlarmRepository.findUnreadAlarmsWithTimeWindowForLocationBased(userId, startDate);
-
+        System.out.println(alarms);
         // Filter alarms based on location
         alarms = alarms.stream()
             .filter(alarm -> {
-                if (alarm.getAlarmType() == AlarmType.LOCATION_BASED) {
+                System.out.println(alarm);
+                if (alarm.getAlarmType() == AlarmType.LOCATION_BASED && alarm.getLatitude() != null && alarm.getLongitude() != null) {
                     // Check if the alarm is within 5km
+
                     double distance = LocationUtils.calculateDistance(
                         latitude, longitude,
                         alarm.getLatitude(), alarm.getLongitude()
                     );
+                    System.out.println(distance);
                     return distance <= MAX_DISTANCE_KM;
                 }
                 return true; // Keep non-location-based alarms
             })
             .collect(Collectors.toList());
 
+        // Create queried alarms for each alarm that was retrieved
+        alarms.forEach(alarm -> {
+            QueriedAlarm.createQueriedAlarm(alarm, userId);
+        });
+
         return new UserAlarmResponse(alarms);
     }
 
-    @PutMapping("/userAlarms/{userAlarmId}/read")
+    @PutMapping("/notification/{userAlarmId}/read")
     public ResponseEntity<?> markAlarmAsRead(@PathVariable Long userAlarmId) {
         return userAlarmRepository.findByUserAlarmId(userAlarmId)
             .map(alarm -> {
@@ -67,9 +78,21 @@ public class UserAlarmController {
             .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/userAlarms/{userId}")
-    public List<UserAlarm> getUserAlarmsByUserId(@PathVariable String userId) {
-        return userAlarmRepository.findByUserIdOrderByCreatedAtDesc(userId);
+
+
+//>>> Clean Arch / Inbound Adaptor
+    @GetMapping("/notification/{userId}")
+    public UserAlarmResponse getUserAlarmsByUserId(
+            @PathVariable String userId) {
+
+        // Get all queried alarms for this user, ordered by query time descending
+        List<QueriedAlarm> queriedAlarms = queriedAlarmRepository.findByQueriedByOrderByQueriedAtDesc(userId);
+
+        // Extract the UserAlarms from the QueriedAlarms
+        List<UserAlarm> alarms = queriedAlarms.stream()
+            .map(QueriedAlarm::getUserAlarm)
+            .collect(Collectors.toList());
+
+        return new UserAlarmResponse(alarms);
     }
 }
-//>>> Clean Arch / Inbound Adaptor

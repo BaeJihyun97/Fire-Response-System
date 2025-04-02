@@ -4,17 +4,15 @@ import fireresponsesystem.domain.*;
 import fireresponsesystem.infra.AbstractEvent;
 import java.util.*;
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 
 @Data
 @ToString
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class VideoAnalysisFailed extends AbstractEvent {
 
     private String videoId;
-    private Long reportId;
-    private String originalVideoUri;
-    private String blurredVideoUri;
-    private Boolean fireDetected;
-    private Object tags;
-    private String summary;
-    private Object frames;
+    private Long eventId;
+
 }

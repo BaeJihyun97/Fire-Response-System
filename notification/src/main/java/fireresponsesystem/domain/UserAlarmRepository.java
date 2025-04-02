@@ -27,5 +27,14 @@ public interface UserAlarmRepository extends JpaRepository<UserAlarm, Long> {
         @Param("startDate") Date startDate
     );
 
+    @Query("SELECT ua FROM UserAlarm ua WHERE " +
+           "(ua.alarmType = 'USER_SPECIFIC' AND ua.userId = :userId) OR " +
+           "(ua.alarmType = 'LOCATION_BASED' AND ua.createdAt >= :startDate) " +
+           "ORDER BY ua.createdAt DESC")
+    List<UserAlarm> findAlarmsWithTimeWindowForLocationBased(
+        @Param("userId") String userId,
+        @Param("startDate") Date startDate
+    );
+
     Optional<UserAlarm> findByUserAlarmId(Long userAlarmId);
 }
