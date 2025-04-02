@@ -207,6 +207,7 @@ class KafkaConsumer:
                         tags=result["tags"],
                         severity=result["severity"],
                         fire_detected=result["fire_detected"],
+                        analyzed_data=result["openai_analysis"],
                     )
                     self.producer.publish("VideoAnalyzed", completed_event)
             else:

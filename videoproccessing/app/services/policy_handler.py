@@ -59,6 +59,7 @@ class PolicyHandler:
                 "fire_detected": report.openai_analysis["fire_detected"],
                 "tags": report.openai_analysis["objects"],
                 "severity": report.openai_analysis["severity"],
+                "openai_analysis": report.openai_analysis,
             }
 
         except Exception as e:

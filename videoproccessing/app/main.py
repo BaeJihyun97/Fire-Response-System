@@ -256,6 +256,7 @@ async def process_video_analysis(event: VideoAnalysisRequestedEvent):
                     tags=result["tags"],
                     severity=result["severity"],
                     fire_detected=result["fire_detected"],
+                    analyzed_data=result["openai_analysis"],
                 )
                 kafka_producer.publish("VideoAnalyzed", completed_event)
         else:

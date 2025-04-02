@@ -7,11 +7,12 @@ ENV POETRY_VERSION=2.1.1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-    RUN apt-get update && apt-get install -y \
-    build-essential \
-    libgl1 \
-    libglib2.0-0 \
-    ffmpeg \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       build-essential \
+       libgl1 \
+       libglib2.0-0 \
+       ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Poetry

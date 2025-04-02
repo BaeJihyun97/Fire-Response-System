@@ -225,32 +225,32 @@ class VideoAnalysisService:
         - Do **not** set "fire_detected": true for ordinary smoke such as from factory exhaust, chimneys, vehicles, or other non-fire sources.
         - Use only the following options for certain fields:
             - "fire_detected": [true, false]
-            - "severity": ["N/A", "low", "moderate", "high", "extreme"]
-            - "fire_size": ["N/A", "small", "moderate", "large", "very large"]
+            - "severity": ["N/A", "낮음", "중간", "높음"]
+            - "fire_size": ["N/A", "소형", "중형", "대형", "초대형"]
         - Return with the following JSON schema EVEN IF there is no fire.
 
         {{
         "fire_detected": true,
-        "fire_size": "moderate",
-        "flame_color": ["orange", "yellow"],
+        "fire_size": "중형",
+        "flame_color": ["주황", "노랑"],
         "smoke": {{
             "present": true,
-            "color": "black",
-            "density": "thick"
+            "color": "검은색",
+            "density": "높음"
         }},
-        "objects": ["car", "streetlight", "sidewalk", "tree"],
+        "objects": ["차", "가로등", "인도", "나무"],
         "people_or_animals": {{
             "present": true,
-            "details": "Two people running from the fire, no visible injuries"
+            "details": "3명 이하의 사람이 화재로부터 달아나고 있음. 겉으로 드러나는 부상은 없어 보임."
         }},
         "fire_spread": {{
             "spreading": true,
-            "indicators": ["thick smoke rising", "flames engulfing car"]
+            "indicators": ["짙은 연기가 피어오름", "차량 전소"]
         }},
         "firefighting_response": {{
             "responders_present": false,
         }},
-        "severity": "moderate"
+        "severity": "중간"
         }}
         """
 
@@ -258,9 +258,6 @@ class VideoAnalysisService:
 
         # Use JSON parser to parse structured output
         parser = SimpleJsonOutputParser()
-
-        # Build LangChain pipeline
-        # analyze_chain = prompt | gpt4o_model | parser
 
         results = []
 
