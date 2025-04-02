@@ -158,6 +158,7 @@ const props = defineProps({
     default: () => ({
       id: '',
       coordinates: { lat: 37.5665, lng: 126.9780 },
+      location: '',
       timestamp: '',
       status: '진행 중',
       isFire: false,
@@ -199,13 +200,13 @@ const riskLevelClass = computed(() => {
   }
 });
 
-// 표시할 위치 정보 계산 - fullAddress로 변경
+// 표시할 위치 정보 계산 - location 속성 사용
 const displayLocation = computed(() => {
-  if (formattedAddress.value && formattedAddress.value.fullAddress) {
-    return formattedAddress.value.fullAddress;
+  if (props.fire.location) {
+    return props.fire.location;
   }
   
-  // 역지오코딩 결과가 없으면 좌표 표시
+  // location이 없으면 좌표 표시
   if (props.fire.coordinates) {
     return `위도: ${props.fire.coordinates.lat.toFixed(5)}, 경도: ${props.fire.coordinates.lng.toFixed(5)}`;
   }
@@ -213,9 +214,15 @@ const displayLocation = computed(() => {
   return '위치 정보 없음';
 });
 
-// 컴포넌트 마운트 시 좌표로부터 주소 변환
+// 컴포넌트 마운트 시 좌표로부터 주소 변환 (location이 없는 경우에만)
 onMounted(async () => {
   console.log('FireReportCard 마운트됨, 좌표:', props.fire.coordinates);
+  
+  // 이미 location이 있으면 역지오코딩 하지 않음
+  if (props.fire.location) {
+    isLoadingAddress.value = false;
+    return;
+  }
   
   if (!props.fire.coordinates) {
     console.error('좌표 정보가 없습니다');
@@ -234,7 +241,6 @@ onMounted(async () => {
     console.log('주소 변환 성공:', address);
   } catch (error) {
     console.error('주소 변환 실패:', error);
-    // 역지오코딩 실패 시 좌표를 그대로 표시하도록 formattedAddress는 null로 유지
   } finally {
     isLoadingAddress.value = false;
   }

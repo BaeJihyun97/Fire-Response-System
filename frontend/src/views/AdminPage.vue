@@ -224,7 +224,7 @@
                       <div>
                         <label class="block text-xs text-gray-500 mb-1">화재 상태 변경</label>
                         <button 
-                          @click="updateEventStatus(report.id, 'resolved')" 
+                          @click="handleStatusChange(report)" 
                           class="w-full py-1.5 bg-red-100 text-red-700 border border-red-300 rounded-md text-sm hover:bg-red-200 transition-colors flex items-center justify-center"
                         >
                           <XCircle class="h-4 w-4 mr-1" />
@@ -779,7 +779,7 @@ const loadEvents = async () => {
     }));
     
     pendingReports.value = events.filter(event => 
-      event.status === 'pending' && event.eventType === 'nonFire'
+      event.status === 'pending' && event.eventType === 'nonfire'
     ).map(event => ({
       id: event._links.self.href.split('/').pop(),
       coordinates: { lat: event.latitude, lng: event.longitude },
@@ -818,11 +818,49 @@ const updateEventStatus = async (eventId, status) => {
     console.log('상태 변경 시도:', { eventId, status }); // 디버깅을 위한 로그
     const response = await eventsApi.updateStatus(eventId, status);
     console.log('상태 변경 응답:', response); // 디버깅을 위한 로그
-    await loadEvents();
-    if (status === 'resolved') {
-      activeTab.value = 'closed';
-    } else if (status === 'pending') {
-      activeTab.value = 'pending';
+    
+    // 상태 변경 후 즉시 데이터 업데이트
+    const events = await eventsApi.getEvents();
+    const updatedEvent = events.data._embedded?.events.find(event => 
+      event._links.self.href.split('/').pop() === eventId.toString()
+    );
+    
+    if (updatedEvent) {
+      console.log('업데이트된 이벤트:', updatedEvent);
+      
+      // 해당 이벤트의 상태를 업데이트
+      if (status === 'resolved') {
+        // activeReports에서 제거
+        activeReports.value = activeReports.value.filter(report => report.id !== eventId.toString());
+        // closedReports에 추가
+        closedReports.value.unshift({
+          id: eventId.toString(),
+          coordinates: { lat: updatedEvent.latitude, lng: updatedEvent.longitude },
+          timestamp: updatedEvent.createdAt,
+          status: '종료',
+          isFire: updatedEvent.eventType === 'fire',
+          riskLevel: '중간',
+          verified: true
+        });
+        activeTab.value = 'closed';
+      } else if (status === 'pending') {
+        // closedReports에서 제거
+        closedReports.value = closedReports.value.filter(report => report.id !== eventId.toString());
+        // activeReports에 추가
+        activeReports.value.unshift({
+          id: eventId.toString(),
+          coordinates: { lat: updatedEvent.latitude, lng: updatedEvent.longitude },
+          timestamp: updatedEvent.createdAt,
+          status: '진행 중',
+          isFire: updatedEvent.eventType === 'fire',
+          riskLevel: '높음',
+          verified: true
+        });
+        activeTab.value = 'active';
+      }
+      
+      // 위치 정보 업데이트
+      await loadLocationInfo(closedReports.value[0]);
     }
   } catch (error) {
     console.error('이벤트 상태 변경 실패:', error);
@@ -847,83 +885,124 @@ const updateEventType = async (eventId, eventType) => {
 };
 
 // 화재 상태 변경 처리
-const handleStatusChange = (report) => {
-  currentReport.value = report;
-  changeType.value = 'status';
-  statusModalTitle.value = '화재 상태 변경';
-  showStatusModal.value = true;
-  
-  // 상태를 종료로 변경하고 종결된 이벤트 탭으로 전환
-  report.status = '종료';
-  activeTab.value = 'closed';
-  
-  // 상태에 따른 기본 알림 메시지 설정
-  statusChangeNotification.value = `화재 #${report.id}가 종결 처리되었습니다.`;
+const handleStatusChange = async (report) => {
+  try {
+    currentReport.value = report;
+    changeType.value = 'status';
+    statusModalTitle.value = '화재 상태 변경';
+    showStatusModal.value = true;
+    
+    // 상태를 종료로 변경하고 종결된 이벤트 탭으로 전환
+    await updateEventStatus(report.id, 'resolved');
+    await loadEvents();
+    activeTab.value = 'closed';
+    
+    // 상태에 따른 기본 알림 메시지 설정
+    statusChangeNotification.value = `화재 #${report.id}가 종결 처리되었습니다.`;
+  } catch (error) {
+    console.error('상태 변경 실패:', error);
+  }
 };
 
 // 소방관 확인 토글
-const toggleFirefighterConfirmation = (report) => {
-  if (report.confirmedByFireDept) {
-    // 이미 확인된 경우, 확인 취소 모달 표시
-    currentReport.value = report;
-    changeType.value = 'firefighter';
-    statusModalTitle.value = '소방관 확인 취소';
-    statusChangeReason.value = '';
-    statusChangeNotification.value = `화재 #${report.id}의 소방관 확인이 취소되었습니다.`;
-    showStatusModal.value = true;
-  } else {
-    // 확인되지 않은 경우, 확인 처리
-    report.confirmedByFireDept = true;
-    report.confirmedAt = new Date().toISOString();
-    
-    // 알림 메시지 표시 (실제로는 서버에 요청)
-    console.log(`소방관 확인: 화재 #${report.id}가 소방관에 의해 확인되었습니다.`);
+const toggleFirefighterConfirmation = async (report) => {
+  try {
+    if (report.confirmedByFireDept) {
+      // 이미 확인된 경우, 확인 취소 모달 표시
+      currentReport.value = report;
+      changeType.value = 'firefighter';
+      statusModalTitle.value = '소방관 확인 취소';
+      statusChangeReason.value = '';
+      statusChangeNotification.value = `화재 #${report.id}의 소방관 확인이 취소되었습니다.`;
+      showStatusModal.value = true;
+    } else {
+      // 확인되지 않은 경우, 확인 처리
+      report.confirmedByFireDept = true;
+      report.confirmedAt = new Date().toISOString();
+      await loadEvents();
+    }
+  } catch (error) {
+    console.error('소방관 확인 처리 실패:', error);
   }
 };
 
 // 화재 이벤트 삭제 처리
-const deleteFireEvent = (report) => {
-  currentReport.value = report;
-  changeType.value = 'delete';
-  statusModalTitle.value = '화재 이벤트 삭제';
-  showStatusModal.value = true;
-  statusChangeNotification.value = `화재 #${report.id}가 삭제되었습니다.`;
+const deleteFireEvent = async (report) => {
+  try {
+    currentReport.value = report;
+    changeType.value = 'delete';
+    statusModalTitle.value = '화재 이벤트 삭제';
+    showStatusModal.value = true;
+    statusChangeNotification.value = `화재 #${report.id}가 삭제되었습니다.`;
+    
+    await updateEventType(report.id, 'nonfire');
+    await loadEvents();
+  } catch (error) {
+    console.error('이벤트 삭제 실패:', error);
+  }
 };
 
 // 제보를 화재로 확인
-const confirmAsFireReport = (report) => {
-  currentReport.value = report;
-  changeType.value = 'confirm';
-  statusModalTitle.value = '화재 확인';
-  showStatusModal.value = true;
-  statusChangeNotification.value = `제보 #${report.id}가 화재로 확인되었습니다. 소방대가 출동 중입니다.`;
+const confirmAsFireReport = async (report) => {
+  try {
+    currentReport.value = report;
+    changeType.value = 'confirm';
+    statusModalTitle.value = '화재 확인';
+    showStatusModal.value = true;
+    statusChangeNotification.value = `제보 #${report.id}가 화재로 확인되었습니다. 소방대가 출동 중입니다.`;
+    
+    await updateEventType(report.id, 'fire');
+    await loadEvents();
+  } catch (error) {
+    console.error('화재 확인 실패:', error);
+  }
 };
 
 // 제보를 오보로 처리
-const markAsFalseReport = (report) => {
-  currentReport.value = report;
-  changeType.value = 'false';
-  statusModalTitle.value = '오보 처리';
-  showStatusModal.value = true;
-  statusChangeNotification.value = `제보 #${report.id}가 오보로 확인되었습니다. 감사합니다.`;
+const markAsFalseReport = async (report) => {
+  try {
+    currentReport.value = report;
+    changeType.value = 'false';
+    statusModalTitle.value = '오보 처리';
+    showStatusModal.value = true;
+    statusChangeNotification.value = `제보 #${report.id}가 오보로 확인되었습니다. 감사합니다.`;
+    
+    await updateEventType(report.id, 'nonfire');
+    await loadEvents();
+  } catch (error) {
+    console.error('오보 처리 실패:', error);
+  }
 };
 
 // 추가 정보 요청
-const requestMoreInfo = (report) => {
-  currentReport.value = report;
-  changeType.value = 'moreInfo';
-  statusModalTitle.value = '추가 정보 요청';
-  showStatusModal.value = true;
-  statusChangeNotification.value = `제보 #${report.id}에 대한 추가 정보가 필요합니다. 자세한 위치나 사진을 제공해주세요.`;
+const requestMoreInfo = async (report) => {
+  try {
+    currentReport.value = report;
+    changeType.value = 'moreInfo';
+    statusModalTitle.value = '추가 정보 요청';
+    showStatusModal.value = true;
+    statusChangeNotification.value = `제보 #${report.id}에 대한 추가 정보가 필요합니다. 자세한 위치나 사진을 제공해주세요.`;
+    
+    await loadEvents();
+  } catch (error) {
+    console.error('추가 정보 요청 실패:', error);
+  }
 };
 
 // 종결된 이벤트 재개
-const restoreReport = (report) => {
-  currentReport.value = report;
-  changeType.value = 'restore';
-  statusModalTitle.value = '이벤트 재개';
-  showStatusModal.value = true;
-  statusChangeNotification.value = `${report.isDeleted ? '오보로 처리된 제보' : '종결된 화재'} #${report.id}가 재개되었습니다.`;
+const restoreReport = async (report) => {
+  try {
+    currentReport.value = report;
+    changeType.value = 'restore';
+    statusModalTitle.value = '이벤트 재개';
+    showStatusModal.value = true;
+    statusChangeNotification.value = `${report.isDeleted ? '오보로 처리된 제보' : '종결된 화재'} #${report.id}가 재개되었습니다.`;
+    
+    await updateEventStatus(report.id, 'pending');
+    await loadEvents();
+  } catch (error) {
+    console.error('이벤트 재개 실패:', error);
+  }
 };
 
 // 상태 변경 취소
@@ -942,121 +1021,37 @@ const cancelStatusChange = () => {
 };
 
 // 상태 변경 확인
-const confirmStatusChange = () => {
-  if (!currentReport.value) return;
-  
-  const now = new Date();
-  const formattedTime = formatTime(now);
-  
-  // 상태 변경 타입에 따른 처리
-  if (changeType.value === 'confirm') {
-    // 제보를 확인된 화재로 변경
-    const newFireReport = {
-      ...currentReport.value,
-      isFire: true,
-      status: "진행 중",
-      verified: true
-    };
+const confirmStatusChange = async () => {
+  try {
+    if (!currentReport.value) return;
     
-    // 확인된 화재 목록에 추가
-    activeReports.value.push(newFireReport);
+    const now = new Date();
+    const formattedTime = formatTime(now);
     
-    // 검토 필요 제보 목록에서 제거
-    pendingReports.value = pendingReports.value.filter(report => report.id !== currentReport.value.id);
-    
-  } else if (changeType.value === 'false') {
-    // 오보로 처리하고 제보 목록에서 제거
-    const falseReport = {
-      ...currentReport.value,
-      isDeleted: true,
-      closeReason: statusChangeReason.value,
-      closedTime: formattedTime
-    };
-    
-    // 종결된 이벤트 목록에 추가
-    closedReports.value.unshift(falseReport);
-    
-    // 검토 필요 제보 목록에서 제거
-    pendingReports.value = pendingReports.value.filter(report => report.id !== currentReport.value.id);
-    
-  } else if (changeType.value === 'moreInfo') {
-    // 추가 정보 요청 처리 (실제로는 알림 전송 등의 로직 필요)
-    console.log(`추가 정보 요청: ${currentReport.value.id}`);
-    
-  } else if (changeType.value === 'delete') {
-    // 화재 이벤트를 오보로 처리하고 종결된 이벤트로 이동
-    const deletedReport = {
-      ...currentReport.value,
-      isDeleted: true,
-      closeReason: statusChangeReason.value,
-      closedTime: formattedTime
-    };
-    
-    // 종결된 이벤트 목록에 추가
-    closedReports.value.unshift(deletedReport);
-    
-    // 활성 화재 목록에서 제거
-    activeReports.value = activeReports.value.filter(report => report.id !== currentReport.value.id);
-    
-    // 종결된 이벤트 탭으로 전환
-    activeTab.value = 'closed';
-    
-  } else if (changeType.value === 'status') {
-    if (currentReport.value.status === '종료') {
-      // 화재 상태를 종결로 변경
-      const closedReport = {
-        ...currentReport.value,
-        status: '종료',
-        closeReason: statusChangeReason.value,
-        closedTime: formattedTime
-      };
-      
-      // 종결된 이벤트 목록에 추가
-      closedReports.value.unshift(closedReport);
-      
-      // 활성 화재 목록에서 제거
-      activeReports.value = activeReports.value.filter(report => report.id !== currentReport.value.id);
-      
-      // 종결된 이벤트 탭으로 전환
-      activeTab.value = 'closed';
-    } else {
-      // 상태를 진행 중으로 변경
-      currentReport.value.status = '진행 중';
+    // 상태 변경 타입에 따른 처리
+    if (changeType.value === 'confirm') {
+      await updateEventType(currentReport.value.id, 'fire');
+    } else if (changeType.value === 'false') {
+      await updateEventType(currentReport.value.id, 'nonfire');
+    } else if (changeType.value === 'delete') {
+      await updateEventType(currentReport.value.id, 'nonfire');
+    } else if (changeType.value === 'status') {
+      await updateEventStatus(currentReport.value.id, 'resolved');
+    } else if (changeType.value === 'restore') {
+      await updateEventStatus(currentReport.value.id, 'pending');
     }
     
-  } else if (changeType.value === 'restore') {
-    // 종결된 이벤트를 다시 활성화
-    const restoredReport = {
-      ...currentReport.value,
-      status: '진행 중',
-      isDeleted: false
-    };
+    // 서버에서 최신 데이터 가져오기
+    await loadEvents();
     
-    // 활성 화재 목록에 추가
-    activeReports.value.push(restoredReport);
-    
-    // 종결된 이벤트 목록에서 제거
-    closedReports.value = closedReports.value.filter(report => report.id !== currentReport.value.id);
-    
-  } else if (changeType.value === 'firefighter') {
-    // 소방관 확인 취소
-    currentReport.value.confirmedByFireDept = false;
-    currentReport.value.confirmedAt = null;
+    // 모달 닫기
+    showStatusModal.value = false;
+    statusChangeReason.value = '';
+    statusChangeNotification.value = '';
+    currentReport.value = null;
+  } catch (error) {
+    console.error('상태 변경 확인 실패:', error);
   }
-  
-  // 변경 사항 로깅 (실제로는 서버에 저장)
-  console.log(`상태 변경: ${changeType.value}, 보고서 ID: ${currentReport.value.id}, 사유: ${statusChangeReason.value}`);
-  
-  // 알림 전송 (실제로는 서버에 요청)
-  if (statusChangeNotification.value) {
-    console.log(`알림 전송: ${statusChangeNotification.value}`);
-  }
-  
-  // 모달 닫기
-  showStatusModal.value = false;
-  statusChangeReason.value = '';
-  statusChangeNotification.value = '';
-  currentReport.value = null;
 };
 
 // 보고서 상세 보기

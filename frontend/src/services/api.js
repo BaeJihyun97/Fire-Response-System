@@ -129,7 +129,7 @@ export const eventApiService = {
   getEventById: (id) => axios.get(`/events/${id}`),
   createEvent: (eventData) => axios.post('/events', eventData),
   updateEvent: (id, eventData) => axios.put(`/events/${id}`, eventData),
-  updateEventStatus: (id, status) => axios.patch(`/events/${id}/status`, { status }),
+  updateEventStatus: (id, status) => axios.put(`/events/${id}/status`, { status }),
   deleteEvent: (id) => axios.delete(`/events/${id}`),
   getActiveEvents: () => axios.get('/events/active'),
   getPendingEvents: () => axios.get('/events/pending'),
@@ -225,15 +225,28 @@ export const eventsApi = {
     // 먼저 이벤트 정보를 가져와서 _links URL을 확인
     return axios.get(`/events/${id}`).then(response => {
       const updateUrl = response.data._links.updateeventtype.href;
-      return axios.patch(updateUrl, { eventType });
+      return axios.put(updateUrl, { eventId: id, eventType });
     });
   },
-  updateStatus: (id, status) => {
-    // 먼저 이벤트 정보를 가져와서 _links URL을 확인
-    return axios.get(`/events/${id}`).then(response => {
-      const updateUrl = response.data._links.updatestatus.href;
-      return axios.patch(updateUrl, { status });
-    });
+  updateStatus: async (id, status) => {
+    try {
+      console.log('상태 변경 요청:', { id, status });
+      // 먼저 이벤트 정보를 가져와서 _links URL을 확인
+      const eventResponse = await axios.get(`/events/${id}`);
+      console.log('이벤트 정보:', eventResponse.data);
+      
+      const updateUrl = eventResponse.data._links.updatestatus.href;
+      console.log('업데이트 URL:', updateUrl);
+      
+      // eventId와 status를 body에 포함
+      const response = await axios.put(updateUrl, { eventId: id, status });
+      console.log('상태 변경 응답:', response.data);
+      
+      return response;
+    } catch (error) {
+      console.error('상태 변경 실패:', error);
+      throw error;
+    }
   }
 };
 

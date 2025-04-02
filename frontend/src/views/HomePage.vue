@@ -120,6 +120,7 @@ import FireReportCard from '../components/FireReportCard.vue';
 import AppHeader from '../components/AppHeader.vue';
 import { useRouter } from 'vue-router';
 import { postApi } from '../services/api';
+import { reverseGeocode } from '../services/geocodingService';
 
 const activeTab = ref('confirmed');
 const isRefreshing = ref(false);
@@ -140,21 +141,36 @@ const refreshData = async () => {
     console.log('API 응답 데이터:', events);
     
     // API 응답 데이터를 현재 구조에 맞게 변환
-    fireReports.value = events.map(event => ({
-      id: event.postId,
-      coordinates: { lat: event.latitude, lng: event.longitude },
-      timestamp: new Date().toISOString(), // 현재 시간으로 설정 (API에서 시간 정보가 없음)
-      status: '진행 중',
-      isFire: true, // 모든 이벤트를 화재로 표시
-      riskLevel: '중간', // 기본 위험도 설정
-      verified: false,
-      metadata: {
-        likes: event.reactionCount || 0,
-        comments: 0, // API에서 댓글 수 정보가 없음
-        videoUrl: event.blurredVideoUri || '',
-        imageUrl: '' // API에서 이미지 URL 정보가 없음
+    const transformedEvents = await Promise.all(events.map(async event => {
+      // 역지오코딩을 통해 주소 가져오기
+      let location = '';
+      try {
+        const address = await reverseGeocode(event.latitude, event.longitude);
+        location = address.fullAddress || `위도: ${event.latitude.toFixed(5)}, 경도: ${event.longitude.toFixed(5)}`;
+      } catch (error) {
+        console.error('주소 변환 실패:', error);
+        location = `위도: ${event.latitude.toFixed(5)}, 경도: ${event.longitude.toFixed(5)}`;
       }
+
+      return {
+        id: event.postId,
+        coordinates: { lat: event.latitude, lng: event.longitude },
+        location: location,
+        timestamp: new Date().toISOString(),
+        status: '진행 중',
+        isFire: true,
+        riskLevel: '중간',
+        verified: false,
+        metadata: {
+          likes: event.reactionCount || 0,
+          comments: 0,
+          videoUrl: event.blurredVideoUri || '',
+          imageUrl: ''
+        }
+      };
     }));
+
+    fireReports.value = transformedEvents;
     console.log('화재 제보 데이터:', fireReports.value);
 
     // 커뮤니티 제보는 현재 API 응답에 해당하는 데이터가 없으므로 빈 배열로 설정
