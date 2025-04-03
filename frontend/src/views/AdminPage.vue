@@ -37,8 +37,8 @@
               </span>
             </router-link>
             
-            <div class="h-8 w-8 rounded-full bg-gray-200 overflow-hidden">
-              <img src="https://ui-avatars.com/api/?name=Admin&background=0D9488&color=fff" alt="프로필" class="h-full w-full object-cover" />
+            <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 overflow-hidden shadow-md flex items-center justify-center text-white font-bold text-sm">
+              AD
             </div>
           </div>
         </div>
@@ -138,8 +138,8 @@
                   <div v-for="report in activeReports" :key="report.id" class="flex flex-col p-3 bg-white rounded-lg border">
                     <div class="flex items-center justify-between">
                       <div class="flex items-center">
-                        <div class="h-10 w-10 rounded-full bg-gray-200 overflow-hidden mr-3">
-                          <img :src="report.userAvatar" :alt="report.username" class="h-full w-full object-cover" />
+                        <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 overflow-hidden mr-3 flex items-center justify-center text-white font-bold text-sm">
+                          AD
                         </div>
                         <div>
                           <div class="flex items-center">
@@ -286,8 +286,8 @@
                   <div v-for="report in pendingReports" :key="report.id" class="flex flex-col p-3 bg-white rounded-lg border">
                     <div class="flex items-center justify-between">
                       <div class="flex items-center">
-                        <div class="h-10 w-10 rounded-full bg-gray-200 overflow-hidden mr-3">
-                          <img :src="report.userAvatar" :alt="report.username" class="h-full w-full object-cover" />
+                        <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 overflow-hidden mr-3 flex items-center justify-center text-white font-bold text-sm">
+                          AD
                         </div>
                         <div>
                           <div class="flex items-center">
@@ -390,8 +390,8 @@
                   <div v-for="report in closedReports" :key="report.id" class="flex flex-col p-3 bg-white rounded-lg border">
                     <div class="flex items-center justify-between">
                       <div class="flex items-center">
-                        <div class="h-10 w-10 rounded-full bg-gray-200 overflow-hidden mr-3">
-                          <img :src="report.userAvatar" :alt="report.username" class="h-full w-full object-cover" />
+                        <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 overflow-hidden mr-3 flex items-center justify-center text-white font-bold text-sm">
+                          AD
                         </div>
                         <div>
                           <div class="flex items-center">
@@ -779,7 +779,7 @@ const loadEvents = async () => {
     }));
     
     pendingReports.value = events.filter(event => 
-      event.status === 'pending' && event.eventType === 'nonfire'
+      event.status === 'pending' && event.eventType !== 'fire'
     ).map(event => ({
       id: event._links.self.href.split('/').pop(),
       coordinates: { lat: event.latitude, lng: event.longitude },
@@ -842,7 +842,6 @@ const updateEventStatus = async (eventId, status) => {
           riskLevel: '중간',
           verified: true
         });
-        activeTab.value = 'closed';
       } else if (status === 'pending') {
         // closedReports에서 제거
         closedReports.value = closedReports.value.filter(report => report.id !== eventId.toString());
@@ -856,7 +855,6 @@ const updateEventStatus = async (eventId, status) => {
           riskLevel: '높음',
           verified: true
         });
-        activeTab.value = 'active';
       }
       
       // 위치 정보 업데이트
@@ -874,11 +872,6 @@ const updateEventType = async (eventId, eventType) => {
     const response = await eventsApi.updateEventType(eventId, eventType);
     console.log('타입 변경 응답:', response); // 디버깅을 위한 로그
     await loadEvents();
-    if (eventType === 'fire') {
-      activeTab.value = 'active';
-    } else if (eventType === 'nonfire') {
-      activeTab.value = 'closed';
-    }
   } catch (error) {
     console.error('이벤트 타입 변경 실패:', error);
   }
@@ -887,18 +880,9 @@ const updateEventType = async (eventId, eventType) => {
 // 화재 상태 변경 처리
 const handleStatusChange = async (report) => {
   try {
-    currentReport.value = report;
-    changeType.value = 'status';
-    statusModalTitle.value = '화재 상태 변경';
-    showStatusModal.value = true;
-    
-    // 상태를 종료로 변경하고 종결된 이벤트 탭으로 전환
+    // 상태를 종료로 변경
     await updateEventStatus(report.id, 'resolved');
     await loadEvents();
-    activeTab.value = 'closed';
-    
-    // 상태에 따른 기본 알림 메시지 설정
-    statusChangeNotification.value = `화재 #${report.id}가 종결 처리되었습니다.`;
   } catch (error) {
     console.error('상태 변경 실패:', error);
   }

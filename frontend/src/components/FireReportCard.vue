@@ -175,6 +175,10 @@ const props = defineProps({
         imageUrl: ''
       }
     })
+  },
+  disableClick: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -412,6 +416,7 @@ const formatTime = (timestamp) => {
 
 // 상세 페이지로 이동
 const goToDetail = () => {
+  if (props.disableClick) return;
   router.push(`/posts/${props.fire.id}`);
 };
 

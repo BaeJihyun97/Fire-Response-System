@@ -40,6 +40,7 @@
               v-for="fire in fireReports" 
               :key="fire.id" 
               :fire="fire"
+              :disableClick="true"
             />
           </div>
         </div>

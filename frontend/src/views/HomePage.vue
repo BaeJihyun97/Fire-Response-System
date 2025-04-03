@@ -118,12 +118,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { AlertTriangle, Bell, Camera, Home, Map, Phone, RefreshCw, User } from 'lucide-vue-next';
 import FireReportCard from '../components/FireReportCard.vue';
 import AppHeader from '../components/AppHeader.vue';
 import { useRouter } from 'vue-router';
-import { postApi, reportApiService } from '../services/api';
+import { postApi, reportApiService, videoApiService } from '../services/api';
 import { reverseGeocode } from '../services/geocodingService';
 import { getUnreadNotifications } from '../services/notificationService';
 import { getCurrentLocation } from '../services/locationService';
@@ -136,6 +136,7 @@ const isLoading = ref(true);
 const error = ref(null);
 const warnLocation = ref(null);
 const alarms = ref([]);
+let refreshInterval = null;  // 새로고침 인터벌을 저장할 변수 추가
 
 // 화재 제보 데이터
 const fireReports = ref([]);
@@ -225,16 +226,23 @@ const refreshData = async () => {
       let isFire = false;
       try {
         const reportResponse = await reportApiService.getLatestReportByEventId(event.eventId);
+        console.log('리포트 응답:', reportResponse);
+        
         if (reportResponse.data && reportResponse.data.videoId) {
           videoUrl = `https://team05sa.blob.core.windows.net/videos/${reportResponse.data.videoId}/${reportResponse.data.videoId}.mp4`;
           const videoInfo = await videoApiService.getVideo(reportResponse.data.videoId);
-          isFire = videoInfo.data.latest_analysis.fire_detected;
+          console.log('비디오 정보:', videoInfo);
+          
+          if (videoInfo.data && videoInfo.data.latest_analysis) {
+            isFire = videoInfo.data.latest_analysis.fire_detected;
+            console.log('화재 감지 여부:', isFire);
+          }
         }
       } catch (error) {
         console.error('비디오 정보 가져오기 실패:', error);
       }
 
-      return {
+      const transformedEvent = {
         id: event.postId,
         coordinates: { lat: event.latitude, lng: event.longitude },
         location: location,
@@ -250,11 +258,15 @@ const refreshData = async () => {
           imageUrl: ''
         }
       };
+      
+      console.log('변환된 이벤트:', transformedEvent);
+      return transformedEvent;
     }));
 
     // 화재 제보와 커뮤니티 제보 분리
-    fireReports.value = transformedEvents.filter(event => event.isFire);
-    communityReports.value = transformedEvents.filter(event => !event.isFire);
+    fireReports.value = transformedEvents.filter(event => event.isFire === true);
+    communityReports.value = transformedEvents.filter(event => event.isFire === false);
+    
     console.log('화재 제보 데이터:', fireReports.value);
     console.log('커뮤니티 제보 데이터:', communityReports.value);
   } catch (error) {
@@ -318,6 +330,19 @@ const updateNotificationCount = async () => {
 onMounted(() => {
   refreshData();
   updateNotificationCount();
+  
+  // 30초마다 데이터 새로고침
+  refreshInterval = setInterval(() => {
+    refreshData();
+    updateNotificationCount();
+  }, 30000);
+});
+
+// 컴포넌트 언마운트 시 인터벌 정리
+onUnmounted(() => {
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
+  }
 });
 </script>
 
