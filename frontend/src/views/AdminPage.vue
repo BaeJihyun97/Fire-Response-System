@@ -45,7 +45,7 @@
       </div>
     </div>
     
-    <div class="container mx-auto px-4 py-6 max-w-4xl">
+    <div class="container mx-auto px-4 py-6 max-w-4xl pb-24">
       <div class="flex justify-between items-center mb-6">
         <div class="flex items-center">
           <Shield class="h-6 w-6 text-blue-600 mr-2" />
