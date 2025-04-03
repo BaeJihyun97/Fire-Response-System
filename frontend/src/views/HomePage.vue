@@ -246,7 +246,7 @@ const refreshData = async () => {
         id: event.postId,
         coordinates: { lat: event.latitude, lng: event.longitude },
         location: location,
-        timestamp: new Date().toISOString(),
+        timestamp: event.createdAt,
         status: '진행 중',
         isFire: isFire,
         riskLevel: 'N/A',
